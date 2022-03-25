@@ -1,6 +1,7 @@
 # Motion Planning Application
 
-This a python template for testing out some MP algorithms. Tested with Python 3.7.8. But should run on any newer version (update requirements.txt). Only packages needed are numpy and image.
+This a python template for testing out some MP algorithms. Tested with Python 3.7.8. But should run on any newer
+version (update requirements.txt). Only packages needed are numpy and image.
 
 ## Installation
 
