@@ -1,9 +1,8 @@
-# MotionPlanning Template
+# Motion Planning Application
 
 This a python template for testing out some MP algorithms. Tested with Python 3.7.8. But should run on any newer version (update requirements.txt). Only packages needed are numpy and image.
 
 ## Installation
-------------
 
 You should create a virtual environment and install the required packages with the following commands:
 
@@ -19,7 +18,6 @@ You should create a virtual environment and install the required packages with t
     (env) $ pip install -r requirements.txt
 
 ## Run
-------------
 
 In order to run it make sure that your venv is runnig and then
 
