@@ -4,7 +4,8 @@ import numpy as np
 from PIL import Image, ImageTk
 
 
-class Workspace:
+class Workspace:  # we need to work on this I guess, this is the part where you have to check for collision and
+    # implement routing
     def __init__(self, robotImagePath, envImagePath, root):
 
         self.root = root
