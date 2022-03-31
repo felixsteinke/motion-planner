@@ -76,5 +76,5 @@ def demo():  # Method Declaration the indentation works as '{'
 
 
 if __name__ == "__main__":  # main method is defined by __main__ and the if __name__ thing is just python way of
-    # saying that the name of the current main is the titel of the file.
+    # saying that the name of the current main is the title of the file.
     demo()  # runs the method demo in main.

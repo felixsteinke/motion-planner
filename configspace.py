@@ -1,33 +1,33 @@
 from tkinter import Canvas, CENTER
 
 
-class Configspace:
+class Configspace:  # shows the way of the robot the algorithm
 
-    def off(self, x):
-        return x + self.theOffset
+    def off(self, x):  # method which returns the offset
+        return x + self.theOffset  #
 
     def __init__(self, root):
-        self.initConfig = -1, -1
-        self.goalConfig = -1, -1
-        self.solutionPath = []
-        self.isInitialize = False
-        self.root = root
-        self.xExt = 0
-        self.yExt = 0
-        self.canvas = Canvas(self.root)
-        self.theOffset = 24
+        self.initConfig = -1, -1  # position of the start Image
+        self.goalConfig = -1, -1  # position of the goal Image
+        self.solutionPath = []  # array of Waypoints
+        self.isInitialize = False  # flag for start & endpoint set
+        self.root = root  # setting the root of the second page for access on the Canvas.
+        self.xExt = 0  # Coordinate x
+        self.yExt = 0  # Coordinate y
+        self.canvas = Canvas(self.root)  # Canvas for 2D graphics.
+        self.theOffset = 24  # haf of the pixel of the robot png.
 
-    def setDimensions(self, x, y):
+    def setDimensions(self, x, y):  #
         self.xExt = x
         self.yExt = y
         off = self.theOffset
         self.canvas.config(bd=0, height=y + 2 * self.theOffset, width=x + 2 * self.theOffset)
         self.drawSpace()
         self.canvas.place(relx=0.5, rely=0.5, anchor=CENTER)
-        # self.canvas.pack(fill=BOTH, expand=1)
+        # self.canvas.pack(fill=BOTH, expand=1) (NOT MY COMMENT)
 
     def drawSpace(self):
-        # Open: remove offset, canvas.config offset buggy
+        # Open: remove offset, canvas.config offset buggy (NOT MY COMMENT)
         self.canvas.delete("all")
         y = self.yExt
         x = self.xExt
