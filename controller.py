@@ -5,6 +5,7 @@ class Controller:
         self.configspace.setDimensions(self.workspace.envArray.shape[1] - round(self.workspace.robotArray.shape[1] / 2)
                                        ,
                                        self.workspace.envArray.shape[0] - round(self.workspace.robotArray.shape[0] / 2))
+        # set dimensions of the configspace Canvas TODO fix subtraction
 
     def setCurrentPosAsInit(self):
         self.configspace.initConfig = (self.workspace.currentPos[0], self.workspace.currentPos[1])
