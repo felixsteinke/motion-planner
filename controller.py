@@ -2,10 +2,8 @@ class Controller:
     def __init__(self, workspace, configspace):
         self.workspace = workspace  # init class reference of workspace page
         self.configspace = configspace  # init class reference of configspace page
-        self.configspace.setDimensions(self.workspace.envArray.shape[1] - round(self.workspace.robotArray.shape[1] / 2)
-                                       ,
-                                       self.workspace.envArray.shape[0] - round(self.workspace.robotArray.shape[0] / 2))
-        # set dimensions of the configspace Canvas TODO fix subtraction
+        self.configspace.setDimensions(self.workspace.envArray.shape[1], self.workspace.envArray.shape[0])
+        # set dimensions of the configspace Canvas
 
     def setCurrentPosAsInit(self):  # setting up start position in configspace with data from workspace gets called
         # on Button in app.py
@@ -21,8 +19,8 @@ class Controller:
         self.configspace.drawSpace()  # draws the updated path in configspace
 
     def drawMouseOffSet(self, mouseX, mouseY):  # send draw update to workspace with last clicked position
-        self.workspace.drawAll(mouseX - round(0.5 * self.workspace.robotImage.width),
-                               mouseY - round(0.5 * self.workspace.robotImage.width),
+        self.workspace.drawAll(mouseX,
+                               mouseY,
                                self.configspace.initConfig[0], self.configspace.initConfig[1],
                                self.configspace.goalConfig[0], self.configspace.goalConfig[1])
 
@@ -37,9 +35,7 @@ class Controller:
         return self.workspace.isInCollision(x, y)  # checks for optical collision in workspace
 
     def isAllInitialized(self):  # checks the initialisation of the config- and workspace
-        if self.configspace.isInitialize and self.workspace.isInitialize:  # TODO simplify
-            return True
-        return False
+        return self.configspace.isInitialize and self.workspace.isInitialize
 
     def setSolutionPathOnCurrentPos(self, index):  # updates the current pos Variable in workspace to be the one on
         # the timestamp of the slider in the solution path

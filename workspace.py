@@ -26,11 +26,15 @@ class Workspace:  # first page of app notebook displays the images of the Worksp
         self.currentPos = xCurrent, yCurrent  # set currentPos to last clicked position
         imageToDraw = self.envImage.copy()  # add environment image to combined image
         if xInit > -1:  # if start position is set
-            imageToDraw.paste(self.robotImage.copy(), (xInit, yInit))  # add robot image at start position
+            imageToDraw.paste(self.robotImage.copy(), (xInit - round(0.5 * self.robotImage.width), yInit - round(
+                0.5 * self.robotImage.height)))  # add robot image at start position
         if xGoal > -1:  # if goal position is set
-            imageToDraw.paste(self.robotImage.copy(), (xGoal, yGoal))  # add robot image at start position
-        imageToDraw.paste(self.robotImage.copy(), (self.currentPos[0], self.currentPos[1]))  # add  robot image at
-        # last position clicked
+            imageToDraw.paste(self.robotImage.copy(), (xGoal - round(0.5 * self.robotImage.width),
+                                                       yGoal - round(0.5 * self.robotImage.height)))
+            # add robot image at start position
+        imageToDraw.paste(self.robotImage.copy(), (self.currentPos[0] - round(0.5 * self.robotImage.width),
+                                                   self.currentPos[1] - round(0.5 * self.robotImage.height)))
+        # add  robot image at last position clicked
         photoToDraw = ImageTk.PhotoImage(imageToDraw)  # creating tkinter drawable from combined image
         self.label.configure(image=photoToDraw)  # update image of label
         self.label.image = photoToDraw  # set image to draw (garbage collection reasons)
