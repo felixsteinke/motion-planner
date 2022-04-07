@@ -23,7 +23,7 @@ def demo():  # Method Declaration the indentation works as '{'
     nb.add(page2, text='Configspace')
     nb.grid(column=0)  # Set the grid position of the Notebook.
 
-    workspace = Workspace("./resources/robot_BW_small.bpm", "./resources/Room_BW_small.bmp", page1)  # Constructor call
+    workspace = Workspace("./resources/robot_BW_small.bmp", "./resources/Room_BW_small.bmp", page1)  # Constructor call
     # from the workspace.py to create the related Object.
     configspace = Configspace(page2)
     controller = Controller(workspace, configspace)
@@ -46,7 +46,6 @@ def demo():  # Method Declaration the indentation works as '{'
     def moveRobotOnPath(val):  # shows the robot on the current slider timestamp
         if controller.isAllInitialized():  # checks initialization of the config- and workspace.
             controller.setSolutionPathOnCurrentPos(int(val))  # provides the controller with the slider value
-            #controller.drawMouseOffSet()
             controller.drawCurrentPos()  # controller gets a draw update call.
             if controller.isInCollision():  # collision check collision (till now only returns false)
                 setBackgroundColor(page1, "red")  # sets the BG to red if collision is detected.

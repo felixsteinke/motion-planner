@@ -71,5 +71,3 @@ class Configspace:  # shows the way of the robot the algorithm
             newY = self.initConfig[1] + deltaY  # ''
             self.solutionPath.append((newX, newY))  # add new Point to the solution path
         self.solutionPath.append(self.goalConfig)  # add goal to the solution path
-
-# all the code could be more readable if we introduced xCoord and yCoord as final at the start.
