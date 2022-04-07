@@ -23,7 +23,7 @@ def demo():  # Method Declaration the indentation works as '{'
     nb.add(page2, text='Configspace')
     nb.grid(column=0)  # Set the grid position of the Notebook.
 
-    workspace = Workspace("./resources/robot_BW_small.bmp", "./resources/Room_BW_small.bmp", page1)  # Constructor call
+    workspace = Workspace("./resources/robot_BW_small.bpm", "./resources/Room_BW_small.bmp", page1)  # Constructor call
     # from the workspace.py to create the related Object.
     configspace = Configspace(page2)
     controller = Controller(workspace, configspace)
@@ -32,19 +32,21 @@ def demo():  # Method Declaration the indentation works as '{'
 
     # Method
 
-    def callback(event):  # Method for use with the button.
+    def callback(event):  # Method for use with the mouse-callback-button.
         # print ("clicked at", event.x, event.y)
         controller.drawMouseOffSet(event.x, event.y)
+        controller.drawCurrentPos()
         if controller.isInCollision():  # if needs no '()' just ':' and indentation.
             setBackgroundColor(page1, "red")
         else:
             setBackgroundColor(page1, "green")
 
-    workspace.label.bind("<Button-1>", callback)  # bind callback to button.
+    workspace.label.bind("<Button-1>", callback)  # bind callback method to left-mouse-button to button.
 
     def moveRobotOnPath(val):  # shows the robot on the current slider timestamp
         if controller.isAllInitialized():  # checks initialization of the config- and workspace.
             controller.setSolutionPathOnCurrentPos(int(val))  # provides the controller with the slider value
+            #controller.drawMouseOffSet()
             controller.drawCurrentPos()  # controller gets a draw update call.
             if controller.isInCollision():  # collision check collision (till now only returns false)
                 setBackgroundColor(page1, "red")  # sets the BG to red if collision is detected.
@@ -76,5 +78,5 @@ def demo():  # Method Declaration the indentation works as '{'
 
 
 if __name__ == "__main__":  # main method is defined by __main__ and the if __name__ thing is just python way of
-    # saying that the name of the current main is the titel of the file.
+    # saying that the name of the current main is the title of the file.
     demo()  # runs the method demo in main.
