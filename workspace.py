@@ -1,7 +1,7 @@
 from tkinter import ttk
 
 import numpy as np
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 
 
 class Workspace:  # first page of app notebook displays the images of the Workspace and checks for collision
@@ -9,10 +9,12 @@ class Workspace:  # first page of app notebook displays the images of the Worksp
 
         self.root = root  # notebook page one = root
         self.envImage = Image.open(envImagePath)  # opening the environment picture
+        self.envImage = ImageOps.grayscale(self.envImage)
         self.envArray = np.array(self.envImage)  # getting the array of color rgb()
         self.envPhoto = ImageTk.PhotoImage(self.envImage)  # converting image to tkinter objet for display
 
         self.robotImage = Image.open(robotImagePath)  # opening the robot picture
+        self.robotImage = ImageOps.grayscale(self.robotImage)
         self.robotArray = np.array(self.robotImage)  # getting the array of color rgb()
         self.robotPhoto = ImageTk.PhotoImage(self.robotImage)  # converting image to tkinter objet for display
 
@@ -40,5 +42,15 @@ class Workspace:  # first page of app notebook displays the images of the Worksp
         self.label.image = photoToDraw  # set image to draw (garbage collection reasons)
         self.label.pack(side="bottom", fill="both", expand="yes")  # packing the label to gid layout of page1
 
-    def isInCollision(self, x, y):  # TODO implement solution for collision optical detection.
-        return False
+    def isInCollision(self, x, y):  # returns true if there was a collision detected
+        envSlice = np.index_exp[y - round(self.robotImage.height / 2):(y + round(self.robotImage.width / 2)),
+                   x - round(self.robotImage.height / 2):x + round(self.robotImage.height / 2)]
+        # configuring a slice from the envArray where there is the robot.
+        envRobotSection = self.envArray[envSlice]  # actually slicing the envArray
+        collisionFlag = False  # Flag to note if there was anny colliding pixels
+        for robotPX in range(self.robotImage.width):  # traversing the Pixels of the robot
+            for robotPY in range(self.robotImage.height):  # ''
+                if (self.robotArray[robotPY, robotPX] < 240) and (envRobotSection[robotPY, robotPX] < 240):
+                    # if there is a matter Pixel (241-255) at the same Coordinates from both arrays -> collision
+                    collisionFlag = True  # turn Flag to collision
+        return collisionFlag  # return the state of the Flag
