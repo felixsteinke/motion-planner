@@ -5,7 +5,7 @@ from PIL import Image, ImageTk, ImageOps
 
 
 class Workspace:  # first page of app notebook displays the images of the Workspace and checks for collision
-    def __init__(self, robotImagePath, envImagePath, root):  # setting up workspace with the two images
+    def __init__(self, robotImagePath, envImagePath, robotPNGPath, root):  # setting up workspace with the two images
 
         self.root = root  # notebook page one = root
         self.envImage = Image.open(envImagePath)  # opening the environment picture
@@ -16,8 +16,10 @@ class Workspace:  # first page of app notebook displays the images of the Worksp
         self.robotImage = Image.open(robotImagePath)  # opening the robot picture
         self.robotImage = ImageOps.grayscale(self.robotImage)
         self.robotArray = np.array(self.robotImage)  # getting the array of color rgb()
-        self.robotPhoto = ImageTk.PhotoImage(self.robotImage)# converting image to tkinter objet for display
         self.robotBorderP = self.analyseSimpleRobot()
+
+        self.robotPhoto = Image.open(robotPNGPath)
+        self.robotPhoto = self.robotPhoto.convert('RGBA')
 
         self.label = ttk.Label(root, image=self.envPhoto)  # setting the environment photo as page 1 background
 
@@ -27,16 +29,16 @@ class Workspace:  # first page of app notebook displays the images of the Worksp
     def drawAll(self, xCurrent, yCurrent, xInit=-1, yInit=-1, xGoal=-1, yGoal=-1):  # draw workspace pictures
         # defined parameters work as standard values if parameter is not set at call of method
         self.currentPos = xCurrent, yCurrent  # set currentPos to last clicked position
-        imageToDraw = self.envImage.copy()  # add environment image to combined image
+        imageToDraw = self.envImage.copy().convert('RGBA')  # add environment image to combined image
         if xInit > -1:  # if start position is set
-            imageToDraw.paste(self.robotImage.copy(), (xInit - round(0.5 * self.robotImage.width), yInit - round(
-                0.5 * self.robotImage.height)))  # add robot image at start position
+            imageToDraw.alpha_composite(self.robotPhoto.copy(), (xInit - round(0.5 * self.robotPhoto.width), yInit - round(
+                0.5 * self.robotPhoto.height)))  # add robot image at start position
         if xGoal > -1:  # if goal position is set
-            imageToDraw.paste(self.robotImage.copy(), (xGoal - round(0.5 * self.robotImage.width),
-                                                       yGoal - round(0.5 * self.robotImage.height)))
+            imageToDraw.alpha_composite(self.robotPhoto.copy(), (xGoal - round(0.5 * self.robotPhoto.width),
+                                                       yGoal - round(0.5 * self.robotPhoto.height)))
             # add robot image at start position
-        imageToDraw.paste(self.robotImage.copy(), (self.currentPos[0] - round(0.5 * self.robotImage.width),
-                                                   self.currentPos[1] - round(0.5 * self.robotImage.height)))
+        imageToDraw.alpha_composite(self.robotPhoto.copy(), (self.currentPos[0] - round(0.5 * self.robotPhoto.width),
+                                                   self.currentPos[1] - round(0.5 * self.robotPhoto.height)))
         # add  robot image at last position clicked
         photoToDraw = ImageTk.PhotoImage(imageToDraw)  # creating tkinter drawable from combined image
         self.label.configure(image=photoToDraw)  # update image of label
@@ -47,7 +49,7 @@ class Workspace:  # first page of app notebook displays the images of the Worksp
         coordList = []  # set up the result set
         for robotPX in range(self.robotImage.width):  # traversing the Pixels of the robot
             for robotPY in range(self.robotImage.height):  # ''
-                if self.robotArray[robotPY, robotPX] < 100:  # check for dark pixel (Matter)
+                if self.robotArray[robotPY, robotPX] < 30:  # check for dark pixel (Matter)
                     currentCut = np.index_exp[  # creating a cut around the current Pixel
                                  (robotPY if (robotPY == 0) else (robotPY - 1)):
                                  (robotPY + 1 if (robotPY == self.robotImage.height - 1) else (robotPY + 2)),
@@ -58,7 +60,7 @@ class Workspace:  # first page of app notebook displays the images of the Worksp
                     currentSurrounding = np.array(currentSurrounding).flatten()  # make array 1D to traverse Pixels easy
                     whitePXFlag = False  # setting up flag for Border Check
                     for i in currentSurrounding:  # actually traversing the neighboring Pixels
-                        if i >= 230:  # check for nearly white Pixels around the black one
+                        if i >= 100:  # check for nearly white Pixels around the black one
                             whitePXFlag = True  # white pixel as neighbor
                     if whitePXFlag:  # checking Flag
                         coordList.append((robotPY, robotPX))  # adding the identified border pixel
