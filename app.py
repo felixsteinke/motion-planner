@@ -23,8 +23,8 @@ def demo():  # Method Declaration the indentation works as '{'
     nb.add(page2, text='Configspace')
     nb.grid(column=0)  # Set the grid position of the Notebook.
 
-    workspace = Workspace("./resources/robot_BW_small.bmp", "./resources/Room_BW_small.bmp", page1)  # Constructor call
-    # from the workspace.py to create the related Object.
+    workspace = Workspace("./resources/robot_BW_small.bmp", "./resources/Room_BW_small.bmp", "./resources"
+            "/robot_BW_small.png", page1)  # Constructor call from the workspace.py to create the related Object.
     configspace = Configspace(page2)
     controller = Controller(workspace, configspace)
 
