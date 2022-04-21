@@ -78,6 +78,9 @@ class Workspace:  # first page of app notebook displays the images of the Worksp
                 collisionFlag = True  # turn Flag to collision
         return collisionFlag  # return the state of the Flag
 
+    def isInRawCollision(self, x, y):
+        return self.envArray[y][x] < 240
+
     def oldIsInCollision(self, x, y):  # returns true if there was a collision detected
         envSlice = np.index_exp[y - round(self.robotImage.height / 2):(y + round(self.robotImage.width / 2)),
                    x - round(self.robotImage.height / 2):x + round(self.robotImage.height / 2)]

@@ -1,45 +1,75 @@
 # Commenting is done with '#'
 # Imports can be done ether general package wise or specific Modules from Package.
 import tkinter  # graphics Lib (not good to use)
-from tkinter import ttk, Scale, HORIZONTAL  # for direct access on the Methods they are imported individually->
+from tkinter import *
+# for direct access on the Methods they are imported individually->
 # https://stackoverflow.com/questions/9439480/from-import-vs-import
+from tkinter.ttk import Notebook
 
+from collisionspace import Collisionspace
 from configspace import Configspace
 from controller import Controller
-from utils import setBackgroundColor
 from workspace import Workspace
 
 
 def demo():  # Method Declaration the indentation works as '{'
     root = tkinter.Tk()  # Tk is something like the Canvas to put your visual components on.
     root.title("Motion Planning")  # refers to the title of the Window.
+    root.geometry('800x800')
+
+    mainFrame = Frame(root)
+    mainFrame.pack(fill=BOTH, expand=1)
+
+    xScrollbarHolder = Frame(mainFrame)
+    xScrollbarHolder.pack(fill=X, side=BOTTOM)
+
+    my_canvas = Canvas(mainFrame)
+    my_canvas.pack(side=LEFT, fill=BOTH, expand=1)
+
+    x_scrollbar = Scrollbar(xScrollbarHolder, orient=HORIZONTAL, command=my_canvas.xview)
+    x_scrollbar.pack(side=BOTTOM, fill=X)
+
+    y_scrollbar = Scrollbar(mainFrame, orient=VERTICAL, command=my_canvas.yview)
+    y_scrollbar.pack(side=RIGHT, fill=Y)
+
+    my_canvas.configure(xscrollcommand=x_scrollbar.set)
+    my_canvas.configure(yscrollcommand=y_scrollbar.set)
+    my_canvas.bind("<Configure>", lambda e: my_canvas.config(scrollregion=my_canvas.bbox(ALL)))
+    second_frame = Frame(my_canvas)
+    my_canvas.create_window((0, 0), window=second_frame, anchor="nw")
+
     universal_height = 1000  # Variable definition
 
-    nb = ttk.Notebook(root)  # Tab element in the Window.
-    page1 = ttk.Frame(nb, width=1080, height=universal_height)  # add Frames to the Notebook.
-    page2 = ttk.Frame(nb, width=1080, height=universal_height)
+    nb = Notebook(second_frame)  # Tab element in the Window.
+    page1 = Frame(nb)  # add Frames to the Notebook.
+    page2 = Frame(nb)
+    page3 = Frame(nb)
 
     nb.add(page1, text='Workspace')  # Set Text of the Tabs.
     nb.add(page2, text='Configspace')
-    nb.grid(column=0)  # Set the grid position of the Notebook.
+    nb.add(page3, text='Collisionspace')
+    nb.grid(row=1, columnspan=20, column=0)  # Set the grid position of the Notebook.
 
-    workspace = Workspace("./resources/robot_BW_small.bmp", "./resources/Room_BW_small.bmp", "./resources"
-            "/robot_BW_small.png", page1)  # Constructor call from the workspace.py to create the related Object.
-    configspace = Configspace(page2)
-    controller = Controller(workspace, configspace)
+    workspace = Workspace("./resources/robot_BW_small.bmp",
+                          "./resources/Room_BW_small.bmp",
+                          "./resources/robot_BW_small.png",
+                          page1)  # Constructor call from the workspace.py to create the related Object.
+    configspace = Configspace("./resources/robot_BW_small.bmp", page2)
+    collisionspace = Collisionspace("./resources/robot_BW_small.png", "./resources/Room_BW_small.bmp", workspace, page3)
+    controller = Controller(workspace, configspace, collisionspace)
 
     workspace.drawAll(workspace.currentPos[0], workspace.currentPos[1])  # Method called from the workspace.drawAll
-
-    # Method
 
     def callback(event):  # Method for use with the mouse-callback-button.
         # print ("clicked at", event.x, event.y)
         controller.drawMouseOffSet(event.x, event.y)
         controller.drawCurrentPos()
         if controller.isInCollision():  # if needs no '()' just ':' and indentation.
-            setBackgroundColor(page1, "red")
+            second_frame.config(background='red')
+            page1.config(background='red')
+
         else:
-            setBackgroundColor(page1, "green")
+            second_frame.config(background='green')
 
     workspace.label.bind("<Button-1>", callback)  # bind callback method to left-mouse-button to button.
 
@@ -48,11 +78,12 @@ def demo():  # Method Declaration the indentation works as '{'
             controller.setSolutionPathOnCurrentPos(int(val))  # provides the controller with the slider value
             controller.drawCurrentPos()  # controller gets a draw update call.
             if controller.isInCollision():  # collision check collision (till now only returns false)
-                setBackgroundColor(page1, "red")  # sets the BG to red if collision is detected.
+                second_frame.config(background='red')  # sets the BG to red if collision is detected.
             else:
-                setBackgroundColor(page1, "green")  # no collision BG = green.
+                second_frame.config(background='green')  # no collision BG = green.
 
-    slider = Scale(page1, from_=0, to=200, orient=HORIZONTAL, command=moveRobotOnPath)  # Slider gets styled and bind
+    slider = Scale(second_frame, from_=0, to=200, orient=HORIZONTAL,
+                   command=moveRobotOnPath)  # Slider gets styled and bind
     # to method above.
     slider.config(length=600)  # more styling sets pixel length of the slider.
 
@@ -62,16 +93,16 @@ def demo():  # Method Declaration the indentation works as '{'
         slider['to_'] = len(configspace.solutionPath) - 1  # sets the slider upper Limit to the length of the current
         # solution so you can cycle through.
 
-    setGoalButton = ttk.Button(page1, text='Set Goal', command=set_goal)  # bind method from above to the button.
-    setGoalButton.pack(side=tkinter.RIGHT)  # set the gid position of the button element.
+    setGoalButton = Button(second_frame, text='Set Goal', command=set_goal)  # bind method from above to the button.
+    setGoalButton.grid(row=0, column=2)  # set the gid position of the button element.
 
     def set_init():  # method to get bound to the setInitButton.
         controller.setCurrentPosAsInit()  # sets the position of the starting point and draws it.
 
-    setInitButton = ttk.Button(page1, text='Set Init', command=set_init)  # binding of the button.
-    setInitButton.pack(side=tkinter.RIGHT)  # setting the grid layout position of the button.
+    setInitButton = Button(second_frame, text='Set Init', command=set_init)  # binding of the button.
+    setInitButton.grid(row=0, column=1)  # setting the grid layout position of the button.
 
-    slider.pack()  # places the slider according to the layout options configured above.
+    slider.grid(row=0, column=0)  # places the slider according to the layout options configured above.
 
     root.mainloop()  # gets a thread for the GUI to have the program start and die with the window.
 

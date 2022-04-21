@@ -1,5 +1,5 @@
 asgiref==3.5.0
-Django==4.0.3
+Django==4.0.4
 image==1.5.33
 numpy==1.22.3
 Pillow==9.1.0
