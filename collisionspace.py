@@ -47,7 +47,8 @@ class Collisionspace:
         print("calculating new collision image please be patient.")
         result = self.roomImage.copy().convert('RGBA')  # add environment image to combined image
         for y in range(self.robotOffsetY, self.MaxY - self.robotOffsetY):
-            print("finished percentage: %s" % (((y - self.robotOffsetY) / (self.MaxY - (2 * self.robotOffsetY))) * 100))
+            if (y % 10) == 0: print(
+                "finished percentage: %s" % (((y - self.robotOffsetY) / (self.MaxY - (2 * self.robotOffsetY))) * 100))
             for x in range(self.robotOffsetX, self.MaxX - self.robotOffsetX):
                 if self.workspace.isInRawCollision(x, y):  # if start position is set
                     result.alpha_composite(self.robotImage.copy(),
