@@ -64,8 +64,8 @@ workspace   configspace   collisionspace
 
 * [app.py](app.py) = start the application and the UI
 * [controller.py](controller.py) = manages all the spaces below
-* [workspace.py](workspace.py) = handles graphical display of algorithms and collision detection
+* [workspace.py](workspace.py) = handles graphical display of algorithms and collision-detection
 * [configspace.py](configspace.py) = handles the motion-planning algorithms
-* [collisionspace.py](collisionspace.py) = calculates and shows Collision-Space
+* [collisionspace.py](collisionspace.py) = calculates and shows collision-space
 
 </details>
