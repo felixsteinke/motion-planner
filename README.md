@@ -1,31 +1,71 @@
 # Motion Planning Application
 
-This a python template for testing out some MP algorithms. Tested with Python 3.7.8. But should run on any newer
-version (update requirements.txt). Only packages needed are numpy and image.
+This project is created from a python template for testing out some Motion Planning Algorithms. The template was created
+with Python `3.7.8`.
+
+The template was extended and updated with improvements to the template and the algorithms itself. The development was
+done with Python `3.10.3` and the [dependencies](requirements.txt) were updated to this state.
+
+### Description
+
+This project was created within a lecture of __Datastructures and Algorithms__. It implements several functions like
+__Collision Detection__ and __Motion Planning__ with calculations in the several spaces.
 
 ## Installation
 
-You should create a virtual environment and install the required packages with the following commands:
+You should create a virtual environment (`venv`) and install the required packages with the following commands:
 
-    Windows:
-    python -m venv env
-    .\env\Scripts\activate    
-    (env) $ pip install -r requirements.txt
+Windows:
 
+```shell
+python -m venv env
+.\env\Scripts\activate    
+(env) $ pip install -r requirements.txt
+```
 
-    Linux:
-    python3 -m venv env
-    source env/bin/activate
-    (env) $ pip install -r requirements.txt
+Linux:
+
+```shell
+python3 -m venv env
+source env/bin/activate
+(env) $ pip install -r requirements.txt
+```
 
 ## Run
 
-In order to run it make sure that your venv is runnig and then
+In order to run it make sure that your `venv` is installed.
 
-    Windows:
-    $ .\env\Scripts\activate 
-    (env) $ python app.py
+Windows:
 
-    Linux:
-    source env/bin/activate
-    (env) $ python app.py
+```shell
+.\env\Scripts\activate 
+(env) $ python app.py
+```
+
+Linux:
+
+```shell
+source env/bin/activate
+(env) $ python app.py
+```
+
+## Architecture
+
+```
+              app.py
+                |
+    ------- controller ----------   
+    |           |               |
+workspace   configspace   collisionspace
+```
+
+<details>
+  <summary>Explanation</summary>
+
+* [app.py](app.py) = start the application and the UI
+* [controller.py](controller.py) = manages all the spaces below
+* [workspace.py](workspace.py) =
+* [configspace.py](configspace.py) =
+* [collisionspace.py](collisionspace.py) =
+
+</details>
