@@ -1,5 +1,5 @@
 class Controller:
-    def __init__(self, workspace, configspace):
+    def __init__(self, workspace, configspace, collisionspace):
         self.workspace = workspace  # init class reference of workspace page
         self.configspace = configspace  # init class reference of configspace page
         self.configspace.setDimensions(self.workspace.envArray.shape[1], self.workspace.envArray.shape[0])
@@ -33,6 +33,9 @@ class Controller:
         if x is None: x = self.workspace.currentPos[0]  # set variables if not provided at method call
         if y is None: y = self.workspace.currentPos[1]  # ''
         return self.workspace.isInCollision(x, y)  # checks for optical collision in workspace
+
+    def isRawCollision(self, x=None, y=None):  # checks if the workspace reports a collision for the current mouse pos
+        return self.workspace.isInRawCollision(x, y)  # checks for optical collision in workspace
 
     def isAllInitialized(self):  # checks the initialisation of the config- and workspace
         return self.configspace.isInitialize and self.workspace.isInitialize
