@@ -6,3 +6,4 @@ Pillow==9.1.0
 pytz==2022.1
 six==1.16.0
 sqlparse==0.4.2
+tqdm~=4.64.0
