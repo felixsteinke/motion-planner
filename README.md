@@ -33,7 +33,7 @@ source env/bin/activate
 
 ## Run
 
-In order to run it make sure that your `venv` is installed.
+In order to run it makes sure that your `venv` is installed.
 
 Windows:
 
