@@ -50,12 +50,12 @@ def demo():  # Method Declaration the indentation works as '{'
     nb.add(page3, text='Collisionspace')
     nb.grid(row=1, columnspan=20, column=0)  # Set the grid position of the Notebook.
 
-    workspace = Workspace("./resources/robot_BW_small.bmp",
-                          "./resources/Room_BW_small.bmp",
-                          "./resources/robot_BW_small.png",
+    workspace = Workspace("./resources/robot_hex.bmp",
+                          "./resources/room_BW_small.bmp",
+                          "./resources/robot_hex.png",
                           page1)  # Constructor call from the workspace.py to create the related Object.
-    configspace = Configspace("./resources/robot_BW_small.bmp", page2)
-    collisionspace = Collisionspace("./resources/robot_BW_small.bmp", "./resources/Room_BW_small.bmp", workspace, page3)
+    configspace = Configspace("./resources/robot_hex.bmp", page2)
+    collisionspace = Collisionspace("./resources/robot_hex.bmp", "./resources/room_BW_small.bmp", workspace, page3)
     controller = Controller(workspace, configspace, collisionspace)
 
     workspace.drawAll(workspace.currentPos[0], workspace.currentPos[1])  # Method called from the workspace.drawAll
