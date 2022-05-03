@@ -1,9 +1,11 @@
 # Commenting is done with '#'
 # Imports can be done ether general package wise or specific Modules from Package.
+import os
 import tkinter  # graphics Lib (not good to use)
 from tkinter import *
 # for direct access on the Methods they are imported individually->
 # https://stackoverflow.com/questions/9439480/from-import-vs-import
+from tkinter import ttk
 from tkinter.ttk import Notebook
 
 from collisionspace import Collisionspace
@@ -15,7 +17,15 @@ from workspace import Workspace
 def demo():  # Method Declaration the indentation works as '{'
     root = tkinter.Tk()  # Tk is something like the Canvas to put your visual components on.
     root.title("Motion Planning")  # refers to the title of the Window.
-    root.geometry('800x800')
+    windowHeight = 800
+    windowWidth = 800
+    posX = int(root.winfo_screenwidth() / 2 - windowWidth / 2)
+    posY = int(root.winfo_screenheight() / 2 - windowHeight / 2)
+    root.geometry("{}x{}+{}+{}".format(windowWidth, windowHeight, posX, posY))
+
+    names = optionPopup()
+    robotName = names[0]
+    roomName = names[1]
 
     mainFrame = Frame(root)
     mainFrame.pack(fill=BOTH, expand=1)
@@ -50,12 +60,13 @@ def demo():  # Method Declaration the indentation works as '{'
     nb.add(page3, text='Collisionspace')
     nb.grid(row=1, columnspan=20, column=0)  # Set the grid position of the Notebook.
 
-    workspace = Workspace("./resources/robot_hex.bmp",
-                          "./resources/room_BW_small.bmp",
-                          "./resources/robot_hex.png",
+    workspace = Workspace("./resources/{}.bmp".format(robotName),
+                          "./resources/{}.bmp".format(roomName),
+                          "./resources/{}.png".format(robotName),
                           page1)  # Constructor call from the workspace.py to create the related Object.
-    configspace = Configspace("./resources/robot_hex.bmp", page2)
-    collisionspace = Collisionspace("./resources/robot_hex.bmp", "./resources/room_BW_small.bmp", workspace, page3)
+    configspace = Configspace("./resources/{}.bmp".format(robotName), page2)
+    collisionspace = Collisionspace("./resources/{}.bmp".format(robotName), "./resources/{}.bmp".format(roomName),
+                                    workspace, page3)
     controller = Controller(workspace, configspace, collisionspace)
 
     workspace.drawAll(workspace.currentPos[0], workspace.currentPos[1])  # Method called from the workspace.drawAll
@@ -105,6 +116,42 @@ def demo():  # Method Declaration the indentation works as '{'
     slider.grid(row=0, column=0)  # places the slider according to the layout options configured above.
 
     root.mainloop()  # gets a thread for the GUI to have the program start and die with the window.
+
+
+def optionPopup():
+    win = tkinter.Toplevel()
+    win.wm_title("Window")
+
+    l = tkinter.Label(win, text="Choose your Configuration.")
+    l.grid(row=0, column=0)
+
+    optionListRobot = []
+    for file in os.listdir('./resources'):
+        if file.startswith('robot_') and file.endswith('.bmp'):
+            optionListRobot.append(file.replace('.bmp', ''))
+    variableRobot = tkinter.StringVar(win)
+    variableRobot.set(optionListRobot[0])
+    tkinter.OptionMenu(win, variableRobot, *optionListRobot).grid(row=1, column=0)
+
+    optionListRoom = []
+    for file in os.listdir('./resources'):
+        if file.startswith('room_') and file.endswith('.bmp'):
+            optionListRoom.append(file.replace('.bmp', ''))
+    variableRoom = tkinter.StringVar(win)
+    variableRoom.set(optionListRoom[0])
+    tkinter.OptionMenu(win, variableRoom, *optionListRoom).grid(row=2, column=0)
+
+    ttk.Button(win, text="Okay", command=win.destroy).grid(row=3, column=0)
+
+    windowHeight = win.winfo_reqheight()
+    windowWidth = win.winfo_reqwidth()
+    posX = int(win.winfo_screenwidth() / 2 - windowWidth / 2)
+    posY = int(win.winfo_screenheight() / 2 - windowHeight / 2)
+    win.geometry("{}x{}+{}+{}".format(windowWidth, windowHeight, posX, posY))
+    win.attributes('-topmost', True)
+    win.wait_window(win)
+
+    return [variableRobot.get(), variableRoom.get()]
 
 
 if __name__ == "__main__":  # main method is defined by __main__ and the if __name__ thing is just python way of

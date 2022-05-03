@@ -1,9 +1,10 @@
 import tkinter
+from tkinter import ttk
 
 import numpy as np
 import os
 import hashlib
-from tqdm import tqdm
+from tqdm.tk import tqdm, trange
 from PIL import Image, ImageTk, ImageOps
 
 
@@ -56,7 +57,7 @@ class Collisionspace:
 
     def calculateNewImage(self):
         print("calculating new collision image please be patient.")
-        for y in tqdm(range(self.robotOffsetY, self.MaxY - self.robotOffsetY)):
+        for y in trange(self.robotOffsetY, self.MaxY - self.robotOffsetY):
             for x in range(self.robotOffsetX, self.MaxX - self.robotOffsetX):
                 if not self.workspace.isInCollision(x, y):
                     self.collisionArray[y][x] = 255
@@ -66,7 +67,6 @@ class Collisionspace:
     def store(self):
         s = self.currentArrayHash
         if not self.checkForExistingHash():
-            # todo fix this conversion issue
             Image.fromarray(self.collisionArray).convert("L").save(self.storagePath + "/%s.bmp" % s)
 
     def load(self) -> Image:
