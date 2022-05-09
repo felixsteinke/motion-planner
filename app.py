@@ -1,6 +1,7 @@
 # Commenting is done with '#'
 # Imports can be done ether general package wise or specific Modules from Package.
 import os
+import sys
 import tkinter  # graphics Lib (not good to use)
 from tkinter import *
 # for direct access on the Methods they are imported individually->
@@ -53,20 +54,18 @@ def demo():  # Method Declaration the indentation works as '{'
     nb = Notebook(second_frame)  # Tab element in the Window.
     page1 = Frame(nb)  # add Frames to the Notebook.
     page2 = Frame(nb)
-    page3 = Frame(nb)
 
     nb.add(page1, text='Workspace')  # Set Text of the Tabs.
     nb.add(page2, text='Configspace')
-    nb.add(page3, text='Collisionspace')
-    nb.grid(row=1, columnspan=20, column=0)  # Set the grid position of the Notebook.
+    nb.grid(row=1, columnspan=80, column=0)  # Set the grid position of the Notebook.
 
     workspace = Workspace("./resources/{}.bmp".format(robotName),
                           "./resources/{}.bmp".format(roomName),
                           "./resources/{}.png".format(robotName),
                           page1)  # Constructor call from the workspace.py to create the related Object.
-    configspace = Configspace("./resources/{}.bmp".format(robotName), page2)
     collisionspace = Collisionspace("./resources/{}.bmp".format(robotName), "./resources/{}.bmp".format(roomName),
-                                    workspace, page3)
+                                    workspace, page2)
+    configspace = Configspace("./resources/{}.bmp".format(robotName), page2)
     controller = Controller(workspace, configspace, collisionspace)
 
     workspace.drawAll(workspace.currentPos[0], workspace.currentPos[1])  # Method called from the workspace.drawAll
@@ -106,6 +105,12 @@ def demo():  # Method Declaration the indentation works as '{'
 
     setGoalButton = Button(second_frame, text='Set Goal', command=set_goal)  # bind method from above to the button.
     setGoalButton.grid(row=0, column=2)  # set the gid position of the button element.
+
+    def restart():
+        os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
+
+    setRestartButton = Button(second_frame, text='Restart', command=restart)  # bind method from above to the button.
+    setRestartButton.grid(row=0, column=3)
 
     def set_init():  # method to get bound to the setInitButton.
         controller.setCurrentPosAsInit()  # sets the position of the starting point and draws it.

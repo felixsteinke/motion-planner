@@ -1,17 +1,17 @@
 import tkinter
-from tkinter import ttk
+from tkinter import NW
 
 import numpy as np
 import os
 import hashlib
-from tqdm.tk import tqdm, trange
+from tqdm.tk import trange
 from PIL import Image, ImageTk, ImageOps
 
 
 class Collisionspace:
 
     def __init__(self, robotImagePath, roomImagePath, workspace, root):
-        self.label = tkinter.Label(root)
+        self.canvas = tkinter.Canvas(root)
         self.root = root  # setting the root of the second page for access on the Canvas.
 
         self.workspace = workspace
@@ -50,10 +50,9 @@ class Collisionspace:
         else:
             self.imageToDisplay = self.calculateNewImage()
             self.store()
+        self.canvas.config(bd=0, height=self.MaxY, width=self.MaxX)
         self.imageToDisplay = ImageTk.PhotoImage(self.imageToDisplay)
-        self.label.configure(image=self.imageToDisplay)  # update image of label
-        self.label.image = self.imageToDisplay  # set image to draw (garbage collection reasons)
-        self.label.pack(side="bottom", fill="both", expand="yes")
+        self.canvas.create_image(0, 0, image=self.imageToDisplay, anchor=NW)
 
     def calculateNewImage(self):
         print("calculating new collision image please be patient.")
