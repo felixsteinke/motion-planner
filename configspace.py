@@ -1,5 +1,6 @@
 from tkinter import CENTER
 from PIL import Image
+from dijkstar import Graph, find_path
 
 
 class Configspace:  # shows the way of the robot the algorithm
@@ -15,6 +16,7 @@ class Configspace:  # shows the way of the robot the algorithm
         self.canvas = root.winfo_children()[0]  # Canvas for 2D graphics.
         self.theOffsetX = int(Image.open(robotImagePath).width/2)  # haf of the pixel of the robot png.
         self.theOffsetY = int(Image.open(robotImagePath).height/2)
+        self.graph = Graph()
 
     def setDimensions(self, x, y):  # of the canvas
         self.xExt = x  # set Max x
