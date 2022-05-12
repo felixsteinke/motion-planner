@@ -47,6 +47,7 @@ class Collisionspace:
     def bigDrawingBusiness(self):
         if self.checkForExistingHash():
             self.imageToDisplay = self.load()
+            self.collisionArray = np.array(self.imageToDisplay)
         else:
             self.imageToDisplay = self.calculateNewImage()
             self.store()

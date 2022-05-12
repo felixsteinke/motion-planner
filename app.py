@@ -65,7 +65,7 @@ def demo():  # Method Declaration the indentation works as '{'
                           page1)  # Constructor call from the workspace.py to create the related Object.
     collisionspace = Collisionspace("./resources/{}.bmp".format(robotName), "./resources/{}.bmp".format(roomName),
                                     workspace, page2)
-    configspace = Configspace("./resources/{}.bmp".format(robotName), page2)
+    configspace = Configspace("./resources/{}.bmp".format(robotName), page2, collisionspace)
     controller = Controller(workspace, configspace, collisionspace)
 
     workspace.drawAll(workspace.currentPos[0], workspace.currentPos[1])  # Method called from the workspace.drawAll

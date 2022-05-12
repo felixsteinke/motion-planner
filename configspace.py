@@ -1,11 +1,17 @@
+import random
 from tkinter import CENTER
 from PIL import Image
 from dijkstar import Graph, find_path
 
 
+def distance(point_one, point_two):
+    return ((point_one[0] - point_two[0]) ** 2 +
+            (point_one[1] - point_two[1]) ** 2) ** 0.5
+
 class Configspace:  # shows the way of the robot the algorithm
 
-    def __init__(self, robotImagePath, root):
+    def __init__(self, robotImagePath, root, collisionspace):
+        self.collisionArray = collisionspace.collisionArray
         self.initConfig = -1, -1  # position of the start Image
         self.goalConfig = -1, -1  # position of the goal Image
         self.solutionPath = []  # array of Waypoints
@@ -61,7 +67,7 @@ class Configspace:  # shows the way of the robot the algorithm
                                     c2[0], c2[1], fill='purple1')
             # draws line from c1 to c2 in purple color
 
-    def setIntialSolutionPath(self):  # fills the self.solutionpath array with points in a straight line from start
+    def setIntialSolutionPath(self):  # fills the self.solution path array with points in a straight line from start
         # to goal points
         resolution = max(abs(
             self.initConfig[0] - self.goalConfig[0]), abs(self.goalConfig[1] - self.goalConfig[1]))  # calculating
@@ -77,3 +83,47 @@ class Configspace:  # shows the way of the robot the algorithm
             newY = self.initConfig[1] + deltaY  # ''
             self.solutionPath.append((newX, newY))  # add new Point to the solution path
         self.solutionPath.append(self.goalConfig)  # add goal to the solution path
+        self.setPRMSolutionPath()
+
+    def randomPoint(self):
+        x = random.randrange(self.theOffsetX, self.xExt - self.theOffsetX)
+        y = random.randrange(self.theOffsetY, self.yExt - self.theOffsetY)
+        resultTuple = (y, x)
+        return resultTuple
+
+    def tupleUnderDistance(self, pointList, d):
+        result = []
+        for i in range(len(pointList) - 1):
+            for c in range(i + 1, len(pointList)):
+                if distance(pointList[i], pointList[c]) < d:
+                    resultItem = (i, c)
+                    result.append(resultItem)
+        return result
+
+    def setPRMSolutionPath(self):
+        self.graph.add_node('startNode')
+        self.graph.add_node('endNode')
+        pointsList = [self.initConfig, self.goalConfig]
+        points = 1000
+        for i in range(points):
+            foundFlag = True
+            while foundFlag:
+                newPoint = self.randomPoint()
+                if self.collisionArray[newPoint[0]][newPoint[1]] > 1:
+                    self.drawConfiguration(newPoint[1], newPoint[0], 'blue')
+                    self.graph.add_node(i)
+                    pointsList.append(newPoint)
+                    foundFlag = False
+        for t in self.tupleUnderDistance(pointsList, 1000):
+            if t[0] == 0:
+                self.graph.add_edge('startNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
+            if t[1] == 0:
+                self.graph.add_edge(t[0], 'startNode', distance(pointsList[t[0]], pointsList[t[1]]))
+            if t[0] == 1:
+                self.graph.add_edge('endNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
+            if t[1] == 1:
+                self.graph.add_edge(t[0], 'startNode', distance(pointsList[t[0]], pointsList[t[1]]))
+            if t[0] == 0 and t[1] == 1:
+                self.graph.add_edge('startNode', 'endNode', distance(pointsList[t[0]], pointsList[t[1]]))
+            self.graph.add_edge(t[0], t[1], distance(pointsList[t[0]], pointsList[t[1]]))
+        print(find_path(self.graph, 'startNode', 'endNode'))
