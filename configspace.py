@@ -8,6 +8,17 @@ def distance(point_one, point_two):
     return ((point_one[0] - point_two[0]) ** 2 +
             (point_one[1] - point_two[1]) ** 2) ** 0.5
 
+
+def tupleUnderDistance(pointList, d):
+    result = []
+    for i in range(len(pointList) - 1):
+        for c in range(i + 1, len(pointList)):
+            if distance(pointList[i], pointList[c]) < d:
+                resultItem = (i, c)
+                result.append(resultItem)
+    return result
+
+
 class Configspace:  # shows the way of the robot the algorithm
 
     def __init__(self, robotImagePath, root, collisionspace):
@@ -20,8 +31,8 @@ class Configspace:  # shows the way of the robot the algorithm
         self.xExt = 0  # Max x
         self.yExt = 0  # Max y
         self.canvas = root.winfo_children()[0]  # Canvas for 2D graphics.
-        self.theOffsetX = int(Image.open(robotImagePath).width/2)  # haf of the pixel of the robot png.
-        self.theOffsetY = int(Image.open(robotImagePath).height/2)
+        self.theOffsetX = int(Image.open(robotImagePath).width / 2)  # haf of the pixel of the robot png.
+        self.theOffsetY = int(Image.open(robotImagePath).height / 2)
         self.graph = Graph()
 
     def setDimensions(self, x, y):  # of the canvas
@@ -38,8 +49,10 @@ class Configspace:  # shows the way of the robot the algorithm
         # self.canvas.delete("all")  # deletes all drawings from the canvas
         y = self.yExt  # set local y to Max y of the
         x = self.xExt  # set local x to Max x of the
-        self.canvas.create_line(self.theOffsetX, self.theOffsetY, self.theOffsetX, y - self.theOffsetY, fill='red')  # left border
-        self.canvas.create_line(self.theOffsetX, self.theOffsetY, x - self.theOffsetX, self.theOffsetY, fill='red')  # upper border
+        self.canvas.create_line(self.theOffsetX, self.theOffsetY, self.theOffsetX, y - self.theOffsetY,
+                                fill='red')  # left border
+        self.canvas.create_line(self.theOffsetX, self.theOffsetY, x - self.theOffsetX, self.theOffsetY,
+                                fill='red')  # upper border
         self.canvas.create_line(x - self.theOffsetX, y - self.theOffsetY, x - self.theOffsetX, self.theOffsetY,
                                 fill='red')  # right
         self.canvas.create_line(x - self.theOffsetX, y - self.theOffsetY, self.theOffsetX, y - self.theOffsetY,
@@ -67,7 +80,7 @@ class Configspace:  # shows the way of the robot the algorithm
                                     c2[0], c2[1], fill='purple1')
             # draws line from c1 to c2 in purple color
 
-    def setIntialSolutionPath(self):  # fills the self.solution path array with points in a straight line from start
+    def setInitialSolutionPath(self):  # fills the self.solution path array with points in a straight line from start
         # to goal points
         resolution = max(abs(
             self.initConfig[0] - self.goalConfig[0]), abs(self.goalConfig[1] - self.goalConfig[1]))  # calculating
@@ -91,15 +104,6 @@ class Configspace:  # shows the way of the robot the algorithm
         resultTuple = (y, x)
         return resultTuple
 
-    def tupleUnderDistance(self, pointList, d):
-        result = []
-        for i in range(len(pointList) - 1):
-            for c in range(i + 1, len(pointList)):
-                if distance(pointList[i], pointList[c]) < d:
-                    resultItem = (i, c)
-                    result.append(resultItem)
-        return result
-
     def setPRMSolutionPath(self):
         self.graph.add_node('startNode')
         self.graph.add_node('endNode')
@@ -114,7 +118,7 @@ class Configspace:  # shows the way of the robot the algorithm
                     self.graph.add_node(i)
                     pointsList.append(newPoint)
                     foundFlag = False
-        for t in self.tupleUnderDistance(pointsList, 1000):
+        for t in tupleUnderDistance(pointsList, 1000):
             if t[0] == 0:
                 self.graph.add_edge('startNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
             if t[1] == 0:
