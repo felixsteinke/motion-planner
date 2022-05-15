@@ -115,3 +115,29 @@ take the most performance. Parallelization of the lines 4 to 10 bring a high ben
 many independent calculations.
 
 </details>
+
+### Rapidly-exploring Random Tree (RRT)
+
+Category: Single-Query Motion Planner
+
+![RRT](.documents/algorithm_RRT.png)
+
+<details>
+  <summary>Explanation</summary>
+
+|        Input        | Explanation |
+|:-------------------:|:------------|
+|  c<sub>init</sub>   |             |
+|  c<sub>goal</sub>   |             |
+| range<sub>max</sub> |             |
+| time<sub>max</sub>  |             |
+
+| Datastructure | Explanation | Interpretation |
+|:-------------:|:------------|:---------------|
+|       T       |             |                |
+
+| Pseudocode Line | Explanation |
+|:---------------:|:------------|
+|        1        |             |
+
+</details>
