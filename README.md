@@ -72,7 +72,9 @@ workspace   configspace   collisionspace
 
 ## Algorithms
 
-### Simplified Probabilistic RoadMaps (Sampling-Based)
+### Simplified Probabilistic RoadMaps (sPRM)
+
+Category: Sampling-based Motion Planner
 
 ![sPRM](.documents/algorithm_sPRM.png)
 
