@@ -13,7 +13,7 @@ def tupleUnderDistance(pointList, d):
     result = []
     for i in range(len(pointList) - 1):
         for c in range(i + 1, len(pointList)):
-            if distance(pointList[i], pointList[c]) < d:
+            if distance(pointList[i], pointList[c]) < d:  # TODO also use the collision function here
                 resultItem = (i, c)
                 result.append(resultItem)
     return result
@@ -72,7 +72,7 @@ class Configspace:  # shows the way of the robot the algorithm
                                 y + r,
                                 fill=color)  # draw color
 
-    def drawSolutionPath(self):  # Draws a line connecting all the points from the solution-path
+    def drawSolutionPath(self):  # Draws a line connecting all the points from the solution-path todo set up for graph
         for i in range(1, len(self.solutionPath)):  # iterate over points from solution-path
             c1 = self.solutionPath[i - 1]  # c1 is the point for the start of the line at loop cycle i
             c2 = self.solutionPath[i]  # c2 is the point for the end of the line at loop cycle i
@@ -104,6 +104,9 @@ class Configspace:  # shows the way of the robot the algorithm
         resultTuple = (y, x)
         return resultTuple
 
+    def checkPath(self, start, goal):
+        return True  # todo implement with the collision array and a straight line check every cell.
+
     def setPRMSolutionPath(self):
         self.graph.add_node('startNode')
         self.graph.add_node('endNode')
@@ -119,15 +122,20 @@ class Configspace:  # shows the way of the robot the algorithm
                     pointsList.append(newPoint)
                     foundFlag = False
         for t in tupleUnderDistance(pointsList, 1000):
-            if t[0] == 0:
-                self.graph.add_edge('startNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
-            if t[1] == 0:
-                self.graph.add_edge(t[0], 'startNode', distance(pointsList[t[0]], pointsList[t[1]]))
-            if t[0] == 1:
-                self.graph.add_edge('endNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
-            if t[1] == 1:
-                self.graph.add_edge(t[0], 'startNode', distance(pointsList[t[0]], pointsList[t[1]]))
             if t[0] == 0 and t[1] == 1:
                 self.graph.add_edge('startNode', 'endNode', distance(pointsList[t[0]], pointsList[t[1]]))
+                continue
+            if t[0] == 0:
+                self.graph.add_edge('startNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
+                continue
+            if t[1] == 0:
+                self.graph.add_edge(t[0], 'startNode', distance(pointsList[t[0]], pointsList[t[1]]))
+                continue
+            if t[0] == 1:
+                self.graph.add_edge('endNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
+                continue
+            if t[1] == 1:
+                self.graph.add_edge(t[0], 'startNode', distance(pointsList[t[0]], pointsList[t[1]]))
+                continue
             self.graph.add_edge(t[0], t[1], distance(pointsList[t[0]], pointsList[t[1]]))
         print(find_path(self.graph, 'startNode', 'endNode'))
