@@ -7,6 +7,7 @@ import hashlib
 from tqdm.tk import trange
 from PIL import Image, ImageTk, ImageOps
 
+RESOURCE_PATH = '../resources'
 
 class Collisionspace:
 
@@ -28,7 +29,7 @@ class Collisionspace:
         self.robotOffsetX = round(robotImage.width / 2)  # haf of the pixel of the robot png.
         self.robotOffsetY = round(robotImage.height / 2)
 
-        self.storagePath = './resources/collision'
+        self.storagePath = '{}/collision'.format(RESOURCE_PATH)
 
         self.roomImage = Image.open(roomImagePath)
         self.roomImage = ImageOps.grayscale(self.roomImage)

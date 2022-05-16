@@ -14,6 +14,8 @@ from configspace import Configspace
 from controller import Controller
 from workspace import Workspace
 
+RESOURCE_PATH = '../resources'
+
 
 def demo():  # Method Declaration the indentation works as '{'
     root = tkinter.Tk()  # Tk is something like the Canvas to put your visual components on.
@@ -59,13 +61,14 @@ def demo():  # Method Declaration the indentation works as '{'
     nb.add(page2, text='Configspace')
     nb.grid(row=1, columnspan=80, column=0)  # Set the grid position of the Notebook.
 
-    workspace = Workspace("./resources/{}.bmp".format(robotName),
-                          "./resources/{}.bmp".format(roomName),
-                          "./resources/{}.png".format(robotName),
+    workspace = Workspace("{}/{}.bmp".format(RESOURCE_PATH, robotName),
+                          "{}/{}.bmp".format(RESOURCE_PATH, roomName),
+                          "{}/{}.png".format(RESOURCE_PATH, robotName),
                           page1)  # Constructor call from the workspace.py to create the related Object.
-    collisionspace = Collisionspace("./resources/{}.bmp".format(robotName), "./resources/{}.bmp".format(roomName),
+    collisionspace = Collisionspace("{}/{}.bmp".format(RESOURCE_PATH, robotName),
+                                    "{}/{}.bmp".format(RESOURCE_PATH, roomName),
                                     workspace, page2)
-    configspace = Configspace("./resources/{}.bmp".format(robotName), page2, collisionspace)
+    configspace = Configspace("{}/{}.bmp".format(RESOURCE_PATH, robotName), page2, collisionspace)
     controller = Controller(workspace, configspace, collisionspace)
 
     workspace.drawAll(workspace.currentPos[0], workspace.currentPos[1])  # Method called from the workspace.drawAll
@@ -131,7 +134,7 @@ def optionPopup():
     l.grid(row=0, column=0)
 
     optionListRobot = []
-    for file in os.listdir('./resources'):
+    for file in os.listdir('../resources'):
         if file.startswith('robot_') and file.endswith('.bmp'):
             optionListRobot.append(file.replace('.bmp', ''))
     variableRobot = tkinter.StringVar(win)
@@ -139,7 +142,7 @@ def optionPopup():
     tkinter.OptionMenu(win, variableRobot, *optionListRobot).grid(row=1, column=0)
 
     optionListRoom = []
-    for file in os.listdir('./resources'):
+    for file in os.listdir('../resources'):
         if file.startswith('room_') and file.endswith('.bmp'):
             optionListRoom.append(file.replace('.bmp', ''))
     variableRoom = tkinter.StringVar(win)
