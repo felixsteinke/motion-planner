@@ -1,7 +1,7 @@
 import random
 from tkinter import CENTER
-from PIL import Image
 from dijkstar import Graph, find_path
+from resource_manager import open_image
 
 
 def distance(point_one, point_two):
@@ -21,18 +21,19 @@ def tupleUnderDistance(pointList, d):
 
 class Configspace:  # shows the way of the robot the algorithm
 
-    def __init__(self, robotImagePath, root, collisionspace):
+    def __init__(self, robot_name, page, collisionspace):
         self.collisionArray = collisionspace.collisionArray
         self.initConfig = -1, -1  # position of the start Image
         self.goalConfig = -1, -1  # position of the goal Image
         self.solutionPath = []  # array of Waypoints
         self.isInitialize = False  # flag for start & endpoint set
-        self.root = root  # setting the root of the second page for access on the Canvas.
+        self.page = page  # setting the root of the second page for access on the Canvas.
         self.xExt = 0  # Max x
         self.yExt = 0  # Max y
-        self.canvas = root.winfo_children()[0]  # Canvas for 2D graphics.
-        self.theOffsetX = int(Image.open(robotImagePath).width / 2)  # haf of the pixel of the robot png.
-        self.theOffsetY = int(Image.open(robotImagePath).height / 2)
+        self.canvas = page.winfo_children()[0]  # Canvas for 2D graphics.
+        robot_image = open_image(robot_name, 'bmp')
+        self.theOffsetX = int(robot_image.width / 2)  # haf of the pixel of the robot png.
+        self.theOffsetY = int(robot_image.height / 2)
         self.graph = Graph()
 
     def setDimensions(self, x, y):  # of the canvas

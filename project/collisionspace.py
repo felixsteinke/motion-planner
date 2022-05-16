@@ -2,22 +2,21 @@ import tkinter
 from tkinter import NW
 
 import numpy as np
-import os
 import hashlib
 from tqdm.tk import trange
-from PIL import Image, ImageTk, ImageOps
+from PIL import ImageTk
 from resource_manager import *
 
 
 class Collisionspace:
 
-    def __init__(self, robotImagePath, roomImagePath, workspace, root):
-        self.canvas = tkinter.Canvas(root)
-        self.root = root  # setting the root of the second page for access on the Canvas.
+    def __init__(self, room_name: str, robot_name: str, workspace, page):
+        self.canvas = tkinter.Canvas(page)
+        self.page = page  # setting the root of the second page for access on the Canvas.
 
         self.workspace = workspace
 
-        self.robotImage = Image.open(robotImagePath)
+        self.robotImage = open_image(robot_name, 'bmp')
         robotImage = ImageOps.grayscale(self.robotImage)
         self.robotArray = np.array(robotImage).flatten()
         for i in self.robotArray:
@@ -29,8 +28,7 @@ class Collisionspace:
         self.robotOffsetX = round(robotImage.width / 2)  # haf of the pixel of the robot png.
         self.robotOffsetY = round(robotImage.height / 2)
 
-        self.roomImage = Image.open(roomImagePath)
-        self.roomImage = ImageOps.grayscale(self.roomImage)
+        self.roomImage = open_greyscale_bmp(room_name)
         self.roomArray = np.array(self.roomImage)
         self.currentArrayHash = hashlib.md5(self.robotImage.tobytes() + self.roomImage.tobytes()).hexdigest()
 
@@ -44,12 +42,12 @@ class Collisionspace:
         self.bigDrawingBusiness()
 
     def bigDrawingBusiness(self):
-        if hash_exists(self.currentArrayHash):
-            self.imageToDisplay = load_hash_image(self.currentArrayHash)
+        if collision_image_exists(self.currentArrayHash):
+            self.imageToDisplay = open_collision_image(self.currentArrayHash)
             self.collisionArray = np.array(self.imageToDisplay)
         else:
             self.imageToDisplay = self.calculateNewImage()
-            store_hash_image(self.currentArrayHash, self.collisionArray)
+            store_collision_image(self.currentArrayHash, self.collisionArray)
         self.canvas.config(bd=0, height=self.MaxY, width=self.MaxX)
         self.imageToDisplay = ImageTk.PhotoImage(self.imageToDisplay)
         self.canvas.create_image(0, 0, image=self.imageToDisplay, anchor=NW)

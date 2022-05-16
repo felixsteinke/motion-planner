@@ -1,5 +1,5 @@
 import os
-from PIL import Image
+from PIL import Image, ImageOps
 
 RESOURCE_PATH = '../resources'
 COLLISION_RESOURCE_PATH = RESOURCE_PATH + '/collision'
@@ -13,19 +13,27 @@ def resource_files(starts_with: str, ends_with: str) -> []:
     return file_list
 
 
-def store_hash_image(hash_digest: str, collision_array):
-    if not hash_exists(hash_digest):
+def open_greyscale_bmp(name: str) -> Image:
+    return ImageOps.grayscale(open_image(name, 'bmp'))
+
+
+def open_image(name: str, file_type: str) -> Image:
+    return Image.open("{}/{}.{}".format(RESOURCE_PATH, name, file_type))
+
+
+def open_collision_image(hash_digest: str) -> Image:
+    if collision_image_exists(hash_digest):
+        return Image.open("{}/{}.bmp".format(COLLISION_RESOURCE_PATH, hash_digest))
+
+
+def store_collision_image(hash_digest: str, collision_array):
+    if not collision_image_exists(hash_digest):
         Image.fromarray(collision_array) \
             .convert("L") \
-            .save(COLLISION_RESOURCE_PATH + "/%s.bmp" % hash_digest)
+            .save("{}/{}.bmp".format(COLLISION_RESOURCE_PATH, hash_digest))
 
 
-def load_hash_image(hash_digest: str) -> Image:
-    if hash_exists(hash_digest):
-        return Image.open(COLLISION_RESOURCE_PATH + "/%s.bmp" % hash_digest)
-
-
-def hash_exists(hash_digest: str) -> bool:
+def collision_image_exists(hash_digest: str) -> bool:
     for file in os.listdir(COLLISION_RESOURCE_PATH):
         if file.startswith(str(hash_digest)):
             return True

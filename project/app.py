@@ -9,23 +9,14 @@ from project.main_frame import MainFrame
 from project.option_frame import OptionFrame
 from workspace import Workspace
 
-RESOURCE_PATH = '../resources'
-
 
 def demo():  # Method Declaration the indentation works as '{'
 
     main_frame = MainFrame()
     options = OptionFrame()
-
-    workspace = Workspace("{}/{}.bmp".format(RESOURCE_PATH, options.robot_name),
-                          "{}/{}.bmp".format(RESOURCE_PATH, options.room_name),
-                          "{}/{}.png".format(RESOURCE_PATH, options.robot_name),
-                          main_frame.notebook_page1)  # Constructor call from the workspace.py to create the related Object.
-    collisionspace = Collisionspace("{}/{}.bmp".format(RESOURCE_PATH, options.robot_name),
-                                    "{}/{}.bmp".format(RESOURCE_PATH, options.room_name),
-                                    workspace, main_frame.notebook_page2)
-    configspace = Configspace("{}/{}.bmp".format(RESOURCE_PATH, options.robot_name), main_frame.notebook_page2,
-                              collisionspace)
+    workspace = Workspace(options.room_name, options.robot_name, main_frame.notebook_page1)
+    collisionspace = Collisionspace(options.room_name, options.robot_name, workspace, main_frame.notebook_page2)
+    configspace = Configspace(options.robot_name, main_frame.notebook_page2, collisionspace)
     controller = Controller(workspace, configspace, collisionspace)
 
     workspace.drawAll(workspace.currentPos[0], workspace.currentPos[1])  # Method called from the workspace.drawAll
