@@ -1,27 +1,25 @@
 from tkinter import ttk
 
 import numpy as np
-from PIL import Image, ImageTk, ImageOps
+from resource_manager import open_greyscale_bmp, open_image
+from PIL import ImageTk
 
 
 class Workspace:  # first page of app notebook displays the images of the Workspace and checks for collision
-    def __init__(self, robotImagePath, envImagePath, robotPNGPath, root):  # setting up workspace with the two images
+    def __init__(self, room_name, robot_name, page):  # setting up workspace with the two images
 
-        self.root = root  # notebook page one = root
-        self.envImage = Image.open(envImagePath)  # opening the environment picture
-        self.envImage = ImageOps.grayscale(self.envImage)
+        self.page = page  # notebook page one = root
+        self.envImage = open_greyscale_bmp(room_name)
         self.envArray = np.array(self.envImage)  # getting the array of color rgb()
         self.envPhoto = ImageTk.PhotoImage(self.envImage)  # converting image to tkinter objet for display
 
-        self.robotImage = Image.open(robotImagePath)  # opening the robot picture
-        self.robotImage = ImageOps.grayscale(self.robotImage)
+        self.robotImage = open_greyscale_bmp(robot_name)
         self.robotArray = np.array(self.robotImage)  # getting the array of color rgb()
         self.robotBorderP = self.analyseSimpleRobot()
 
-        self.robotPhoto = Image.open(robotPNGPath)
-        self.robotPhoto = self.robotPhoto.convert('RGBA')
+        self.robotPhoto = open_image(robot_name, 'png').convert('RGBA')
 
-        self.label = ttk.Label(root, image=self.envPhoto)  # setting the environment photo as page 1 background
+        self.label = ttk.Label(page, image=self.envPhoto)  # setting the environment photo as page 1 background
 
         self.currentPos = (0, 0)  # new Variable for mouse position
         self.isInitialize = False  # initialisation flag variable
