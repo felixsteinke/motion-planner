@@ -9,16 +9,6 @@ def distance(point_one, point_two):
             (point_one[1] - point_two[1]) ** 2) ** 0.5
 
 
-def tupleUnderDistance(pointList, d):
-    result = []
-    for i in range(len(pointList) - 1):
-        for c in range(i + 1, len(pointList)):
-            if distance(pointList[i], pointList[c]) < d:  # TODO also use the collision function here
-                resultItem = (i, c)
-                result.append(resultItem)
-    return result
-
-
 class Configspace:  # shows the way of the robot the algorithm
 
     def __init__(self, robot_name, page, collisionspace):
@@ -73,13 +63,16 @@ class Configspace:  # shows the way of the robot the algorithm
                                 y + r,
                                 fill=color)  # draw color
 
-    def drawSolutionPath(self):  # Draws a line connecting all the points from the solution-path todo set up for graph
+    def drawSolutionPath(self):  # Draws a line connecting all the points from the solution-path
         for i in range(1, len(self.solutionPath)):  # iterate over points from solution-path
             c1 = self.solutionPath[i - 1]  # c1 is the point for the start of the line at loop cycle i
             c2 = self.solutionPath[i]  # c2 is the point for the end of the line at loop cycle i
             self.canvas.create_line(c1[0], c1[1],
                                     c2[0], c2[1], fill='purple1')
             # draws line from c1 to c2 in purple color
+
+    def drawLine(self, start, goal, color):
+        self.canvas.create_line(start[1], start[0], goal[1], goal[0], fill=color)
 
     def setInitialSolutionPath(self):  # fills the self.solution path array with points in a straight line from start
         # to goal points
@@ -105,38 +98,63 @@ class Configspace:  # shows the way of the robot the algorithm
         resultTuple = (y, x)
         return resultTuple
 
-    def checkPath(self, start, goal):
-        return True  # todo implement with the collision array and a straight line check every cell.
+    def checkPathCollision(self, start, goal):
+        steps = round(distance(start, goal))
+        for i in range(1, steps):
+            deltaX = round(i * float(goal[1] - start[1]) / float(steps))
+            deltaY = round(i * float(goal[0] - start[0]) / float(steps))
+            newX = start[1] + deltaX
+            newY = start[0] + deltaY
+            if self.collisionArray[newY][newX] == 0:
+                return True
+        return False
+
+    def addPathToSolution(self, start, goal):
+        steps = round(distance(start, goal))
+        for i in range(1, steps):
+            deltaX = round(i * float(goal[1] - start[1]) / float(steps))
+            deltaY = round(i * float(goal[0] - start[0]) / float(steps))
+            newX = start[1] + deltaX
+            newY = start[0] + deltaY
+            self.solutionPath.append((newX, newY))
+
+    def tupleUnderDistance(self, pointList, d):
+        result = []
+        for i in range(len(pointList) - 1):
+            for c in range(i + 1, len(pointList)):
+                if distance(pointList[i], pointList[c]) < d:
+                    if not self.checkPathCollision(pointList[i], pointList[c]):
+                        resultItem = (i, c)
+                        result.append(resultItem)
+        return result
 
     def setPRMSolutionPath(self):
-        self.graph.add_node('startNode')
-        self.graph.add_node('endNode')
-        pointsList = [self.initConfig, self.goalConfig]
+        self.graph.add_node(0)
+        self.graph.add_node(1)
+        pointsList = [(self.initConfig[1], self.initConfig[0]), (self.goalConfig[1], self.goalConfig[0])]
         points = 1000
-        for i in range(points):
+        for i in range(2, points + 2):
             foundFlag = True
             while foundFlag:
                 newPoint = self.randomPoint()
                 if self.collisionArray[newPoint[0]][newPoint[1]] > 1:
-                    self.drawConfiguration(newPoint[1], newPoint[0], 'blue')
                     self.graph.add_node(i)
                     pointsList.append(newPoint)
                     foundFlag = False
-        for t in tupleUnderDistance(pointsList, 1000):
-            if t[0] == 0 and t[1] == 1:
-                self.graph.add_edge('startNode', 'endNode', distance(pointsList[t[0]], pointsList[t[1]]))
-                continue
-            if t[0] == 0:
-                self.graph.add_edge('startNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
-                continue
-            if t[1] == 0:
-                self.graph.add_edge(t[0], 'startNode', distance(pointsList[t[0]], pointsList[t[1]]))
-                continue
-            if t[0] == 1:
-                self.graph.add_edge('endNode', t[1], distance(pointsList[t[0]], pointsList[t[1]]))
-                continue
-            if t[1] == 1:
-                self.graph.add_edge(t[0], 'startNode', distance(pointsList[t[0]], pointsList[t[1]]))
-                continue
-            self.graph.add_edge(t[0], t[1], distance(pointsList[t[0]], pointsList[t[1]]))
-        print(find_path(self.graph, 'startNode', 'endNode'))
+        for i in pointsList:
+            self.drawConfiguration(i[1], i[0], 'blue')
+        for t in self.tupleUnderDistance(pointsList, 80):
+            self.graph.add_edge(t[0], t[1], round(distance(pointsList[t[0]], pointsList[t[1]])))
+            self.graph.add_edge(t[1], t[0], round(distance(pointsList[t[1]], pointsList[t[0]])))
+            self.drawLine(pointsList[t[0]], pointsList[t[1]], 'yellow')
+        path = find_path(self.graph, 0, 1)
+        lastPoint = pointsList[0]
+        for n in path.nodes:
+            self.drawConfiguration(lastPoint[1], lastPoint[0], 'purple')
+            thisPoint = pointsList[n]
+            if not n == 0:
+                self.drawLine(lastPoint, thisPoint, 'pink')
+                self.addPathToSolution(lastPoint, thisPoint)
+            lastPoint = thisPoint
+        self.drawConfiguration(pointsList[0][1], pointsList[0][0], 'red')
+        self.drawConfiguration(pointsList[1][1], pointsList[1][0], 'green')

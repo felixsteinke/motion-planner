@@ -13,7 +13,8 @@ class Controller:
     def setCurrentPosAsGoal(self):  # setting up goal position in configspace with data from workspace gets called
         # on Button in app.py
         self.configspace.goalConfig = (self.workspace.currentPos[0], self.workspace.currentPos[1])
-        self.configspace.setInitialSolutionPath()  # pathfinding-algorithm call
+        # self.configspace.setInitialSolutionPath()  # pathfinding-algorithm call
+        self.configspace.setPRMSolutionPath()
         self.configspace.isInitialize = True  # set start position flag
         self.workspace.isInitialize = True  # set goal position flag
         self.configspace.drawSpace()  # draws the updated path in configspace
