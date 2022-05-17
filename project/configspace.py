@@ -1,4 +1,9 @@
+import os
 import random
+import time
+from functools import partial
+from itertools import repeat
+from multiprocessing import Pool
 from tkinter import CENTER
 from dijkstar import Graph, find_path
 from resource_manager import open_image
@@ -7,6 +12,35 @@ from resource_manager import open_image
 def distance(point_one, point_two):
     return ((point_one[0] - point_two[0]) ** 2 +
             (point_one[1] - point_two[1]) ** 2) ** 0.5
+
+
+def checkPathCollisionFree(collisionArray, pointList, t):
+    start = pointList[t[0]]
+    goal = pointList[t[1]]
+    steps = round(distance(start, goal))
+    for i in range(1, steps):
+        deltaX = round(i * float(goal[1] - start[1]) / float(steps))
+        deltaY = round(i * float(goal[0] - start[0]) / float(steps))
+        newX = start[1] + deltaX
+        newY = start[0] + deltaY
+        if collisionArray[newY][newX] == 0:
+            return None
+    return [t[0], t[1]]
+
+
+def tupleUnderDistance(collisionArray, pointList, d):
+    start = time.time()
+    underDistance = []
+    for i in range(len(pointList) - 1):
+        for c in range(i + 1, len(pointList)):
+            if distance(pointList[i], pointList[c]) < d:
+                underDistance.append([i, c])
+    with Pool(4) as p:
+        collisionFree = p.starmap(checkPathCollisionFree,
+                                  zip(repeat(collisionArray), repeat(pointList), underDistance))
+    end = time.time()
+    print(end - start)
+    return filter(None, collisionFree)
 
 
 class Configspace:  # shows the way of the robot the algorithm
@@ -98,17 +132,6 @@ class Configspace:  # shows the way of the robot the algorithm
         resultTuple = (y, x)
         return resultTuple
 
-    def checkPathCollision(self, start, goal):
-        steps = round(distance(start, goal))
-        for i in range(1, steps):
-            deltaX = round(i * float(goal[1] - start[1]) / float(steps))
-            deltaY = round(i * float(goal[0] - start[0]) / float(steps))
-            newX = start[1] + deltaX
-            newY = start[0] + deltaY
-            if self.collisionArray[newY][newX] == 0:
-                return True
-        return False
-
     def addPathToSolution(self, start, goal):
         steps = round(distance(start, goal))
         for i in range(1, steps):
@@ -117,16 +140,6 @@ class Configspace:  # shows the way of the robot the algorithm
             newX = start[1] + deltaX
             newY = start[0] + deltaY
             self.solutionPath.append((newX, newY))
-
-    def tupleUnderDistance(self, pointList, d):
-        result = []
-        for i in range(len(pointList) - 1):
-            for c in range(i + 1, len(pointList)):
-                if distance(pointList[i], pointList[c]) < d:
-                    if not self.checkPathCollision(pointList[i], pointList[c]):
-                        resultItem = (i, c)
-                        result.append(resultItem)
-        return result
 
     def setPRMSolutionPath(self):
         self.graph.add_node(0)
@@ -143,7 +156,7 @@ class Configspace:  # shows the way of the robot the algorithm
                     foundFlag = False
         for i in pointsList:
             self.drawConfiguration(i[1], i[0], 'blue')
-        for t in self.tupleUnderDistance(pointsList, 80):
+        for t in tupleUnderDistance(self.collisionArray, pointsList, 80):
             self.graph.add_edge(t[0], t[1], round(distance(pointsList[t[0]], pointsList[t[1]])))
             self.graph.add_edge(t[1], t[0], round(distance(pointsList[t[1]], pointsList[t[0]])))
             self.drawLine(pointsList[t[0]], pointsList[t[1]], 'yellow')
