@@ -29,7 +29,6 @@ def checkPathCollisionFree(collisionArray, pointList, t):
 
 
 def tupleUnderDistance(collisionArray, pointList, d):
-    start = time.time()
     underDistance = []
     for i in range(len(pointList) - 1):
         for c in range(i + 1, len(pointList)):
@@ -38,8 +37,6 @@ def tupleUnderDistance(collisionArray, pointList, d):
     with Pool(4) as p:
         collisionFree = p.starmap(checkPathCollisionFree,
                                   zip(repeat(collisionArray), repeat(pointList), underDistance))
-    end = time.time()
-    print(end - start)
     return filter(None, collisionFree)
 
 
