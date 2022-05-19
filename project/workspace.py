@@ -1,93 +1,125 @@
-from tkinter import ttk
-
-import numpy as np
-from resource_manager import open_greyscale_bmp, open_image
+from resource_manager import open_image, open_greyscale_bmp
+from tkinter import *
 from PIL import ImageTk
+import numpy as np
 
 
-class Workspace:  # first page of app notebook displays the images of the Workspace and checks for collision
-    def __init__(self, room_name, robot_name, page):  # setting up workspace with the two images
+class Workspace:
+    def __init__(self, app_page, room_name, robot_name):
+        room_bmp = open_greyscale_bmp(room_name)
+        robot_bmp = open_greyscale_bmp(robot_name)
+        robot_png = open_image(robot_name, 'png')
+        self.__calculator = WorkspaceCalculator(room_bmp, robot_bmp)
+        self.__view = WorkspaceView(app_page, room_bmp, robot_bmp, robot_png)
+        self.__init_config_xy = []
+        self.__goal_config_xy = []
+        self.current_position_xy = []
 
-        self.page = page  # notebook page one = root
-        self.envImage = open_greyscale_bmp(room_name)
-        self.envArray = np.array(self.envImage)  # getting the array of color rgb()
-        self.envPhoto = ImageTk.PhotoImage(self.envImage)  # converting image to tkinter objet for display
+    def bind_click_callback(self, action_ref):
+        self.__view.set_callback(action_ref)
 
-        self.robotImage = open_greyscale_bmp(robot_name)
-        self.robotArray = np.array(self.robotImage)  # getting the array of color rgb()
-        self.robotBorderP = self.analyseSimpleRobot()
+    def is_in_collision(self, x, y) -> bool:
+        return self.__calculator.is_robot_in_collision(x, y)
 
-        self.robotPhoto = open_image(robot_name, 'png').convert('RGBA')
+    def reset(self):
+        self.__init_config_xy = []
+        self.__goal_config_xy = []
+        self.__view.reset()
 
-        self.label = ttk.Label(page, image=self.envPhoto)  # setting the environment photo as page 1 background
+    def set_init_config(self, x, y):
+        self.__init_config_xy = [x, y]
 
-        self.currentPos = (0, 0)  # new Variable for mouse position
-        self.isInitialize = False  # initialisation flag variable
+    def set_goal_config(self, x, y):
+        self.__goal_config_xy = [x, y]
 
-    def drawAll(self, xCurrent, yCurrent, xInit=-1, yInit=-1, xGoal=-1, yGoal=-1):  # draw workspace pictures
-        # defined parameters work as standard values if parameter is not set at call of method
-        self.currentPos = xCurrent, yCurrent  # set currentPos to last clicked position
-        imageToDraw = self.envImage.copy().convert('RGBA')  # add environment image to combined image
-        if xInit > -1:  # if start position is set
-            imageToDraw.alpha_composite(self.robotPhoto.copy(), (xInit - round(0.5 * self.robotPhoto.width), yInit - round(
-                0.5 * self.robotPhoto.height)))  # add robot image at start position
-        if xGoal > -1:  # if goal position is set
-            imageToDraw.alpha_composite(self.robotPhoto.copy(), (xGoal - round(0.5 * self.robotPhoto.width),
-                                                       yGoal - round(0.5 * self.robotPhoto.height)))
-            # add robot image at start position
-        imageToDraw.alpha_composite(self.robotPhoto.copy(), (self.currentPos[0] - round(0.5 * self.robotPhoto.width),
-                                                   self.currentPos[1] - round(0.5 * self.robotPhoto.height)))
-        # add  robot image at last position clicked
-        photoToDraw = ImageTk.PhotoImage(imageToDraw)  # creating tkinter drawable from combined image
-        self.label.configure(image=photoToDraw)  # update image of label
-        self.label.image = photoToDraw  # set image to draw (garbage collection reasons)
-        self.label.pack(side="bottom", fill="both", expand="yes")  # packing the label to gid layout of page1
+    def draw_robot(self, x, y):
+        self.__view.reset()
+        if self.__init_config_xy:
+            self.__view.draw_robot(self.__init_config_xy[0], self.__init_config_xy[1])
+        if self.__goal_config_xy:
+            self.__view.draw_robot(self.__goal_config_xy[0], self.__goal_config_xy[1])
+        self.__view.draw_robot(x, y)
 
-    def analyseSimpleRobot(self):  # returning list of all border Pixel of the robot
-        coordList = []  # set up the result set
-        for robotPX in range(self.robotImage.width):  # traversing the Pixels of the robot
-            for robotPY in range(self.robotImage.height):  # ''
-                if self.robotArray[robotPY, robotPX] < 30:  # check for dark pixel (Matter)
-                    currentCut = np.index_exp[  # creating a cut around the current Pixel
-                                 (robotPY if (robotPY == 0) else (robotPY - 1)):
-                                 (robotPY + 1 if (robotPY == self.robotImage.height - 1) else (robotPY + 2)),
-                                 (robotPX if (robotPX == 0) else (robotPX - 1)):
-                                 (robotPX + 1 if (robotPX == self.robotImage.width - 1) else (robotPX + 2))]
-                    # not necessary to understand just some conditions for the array borders
-                    currentSurrounding = self.robotArray[currentCut]  # actual cutting of the Robot array to get slice
-                    currentSurrounding = np.array(currentSurrounding).flatten()  # make array 1D to traverse Pixels easy
-                    whitePXFlag = False  # setting up flag for Border Check
-                    for i in currentSurrounding:  # actually traversing the neighboring Pixels
-                        if i >= 100:  # check for nearly white Pixels around the black one
-                            whitePXFlag = True  # white pixel as neighbor
-                    if whitePXFlag:  # checking Flag
-                        coordList.append((robotPY, robotPX))  # adding the identified border pixel
-        return coordList  # returning list of all border Pixel of the robot
 
-    def isInCollision(self, x, y):  # returns true if there was a collision detected
-        envSlice = np.index_exp[y - round(self.robotImage.height / 2):(y + round(self.robotImage.width / 2)),
-                   x - round(self.robotImage.height / 2):x + round(self.robotImage.height / 2)]
-        # configuring a slice from the envArray where there is the robot.
-        envRobotSection = self.envArray[envSlice]  # actually slicing the envArray
-        collisionFlag = False  # Flag to note if there was anny colliding pixels
-        for i in self.robotBorderP:
-            if (self.robotArray[i] < 240) and (envRobotSection[i] < 240):
-                # if there is a matter Pixel (241-255) at the same Coordinates from both arrays -> collision
-                collisionFlag = True  # turn Flag to collision
-        return collisionFlag  # return the state of the Flag
+class WorkspaceView:
+    def __init__(self, frame, room_bmp_image, robot_bmp_image, robot_png_image):
+        self.__root_frame = frame
+        self.__room_bmp = room_bmp_image
+        self.__room_rgba = room_bmp_image.convert('RGBA')
+        self.__robot_bmp = robot_bmp_image
+        self.__robot_rgba = robot_png_image.convert('RGBA')
+        self.__background = Label(frame, image=ImageTk.PhotoImage(self.__room_rgba))  # setting the photo as background
+        self.__style_background(self.__room_rgba)
 
-    def isInRawCollision(self, x, y):
-        return self.envArray[y][x] < 240
+    def __style_background(self, image: Image):
+        tk_image = ImageTk.PhotoImage(image)
+        self.__background.configure(image=tk_image)  # update image of label
+        self.__background.image = tk_image  # set image to draw (garbage collection reasons)
+        self.__background.pack(side="bottom", fill="both", expand=YES)  # packing the label to gid layout of page1
 
-    def oldIsInCollision(self, x, y):  # returns true if there was a collision detected
-        envSlice = np.index_exp[y - round(self.robotImage.height / 2):(y + round(self.robotImage.width / 2)),
-                   x - round(self.robotImage.height / 2):x + round(self.robotImage.height / 2)]
-        # configuring a slice from the envArray where there is the robot.
-        envRobotSection = self.envArray[envSlice]  # actually slicing the envArray
-        collisionFlag = False  # Flag to note if there was anny colliding pixels
-        for robotPX in range(self.robotImage.width):  # traversing the Pixels of the robot
-            for robotPY in range(self.robotImage.height):  # ''
-                if (self.robotArray[robotPY, robotPX] < 240) and (envRobotSection[robotPY, robotPX] < 240):
-                    # if there is a matter Pixel (241-255) at the same Coordinates from both arrays -> collision
-                    collisionFlag = True  # turn Flag to collision
-        return collisionFlag  # return the state of the Flag
+    def set_callback(self, action_ref):
+        self.__background.bind("<Button-1>", action_ref)
+
+    def reset(self):
+        self.__style_background(self.__room_rgba)
+
+    def draw_robot(self, x_center, y_center):
+        transformed_x = x_center - round(0.5 * self.__robot_rgba.width)
+        transformed_y = y_center - round(0.5 * self.__robot_rgba.height)
+
+        combined_image = self.__room_rgba.copy()
+        combined_image.alpha_composite(self.__robot_rgba.copy(), (transformed_x, transformed_y))
+        self.__style_background(combined_image)
+
+
+class WorkspaceCalculator:
+    def __init__(self, room_greyscale_image, robot_greyscale_image):
+        self.__room_array_yx = np.array(room_greyscale_image)
+        self.__robot_image = robot_greyscale_image
+        self.__robot_array_yx = np.array(robot_greyscale_image)  # getting the array of color rgb()
+        self.__robot_border_array_yx = self.__analyze_robot_border()
+
+    def __analyze_robot_border(self) -> []:  # returning list of all border Pixel of the robot
+        border_pixels_yx = []  # set up the result set
+        for robot_px in range(self.__robot_image.width):  # traversing the Pixels of the robot
+            for robot_py in range(self.__robot_image.height):
+                if pixel_is_dark(self.__robot_array_yx[robot_py, robot_px]):
+                    robot_area = self.__robot_array_yx[self.__robot_slice(robot_px, robot_py)]
+                    neighbor_pixels = np.array(robot_area).flatten()  # make array 1D to traverse Pixels easy
+                    for rgb_pixel in neighbor_pixels:
+                        if pixel_is_white(rgb_pixel):
+                            border_pixels_yx.append((robot_py, robot_px))
+                            break
+        return border_pixels_yx
+
+    def __robot_slice(self, point_x: int, point_y: int):
+        # not necessary to understand just some conditions for the array borders
+        return np.index_exp[
+               (point_y if (point_y == 0) else (point_y - 1)):
+               (point_y + 1 if (point_y == self.__robot_image.height - 1) else (point_y + 2)),
+               (point_x if (point_x == 0) else (point_x - 1)):
+               (point_x + 1 if (point_x == self.__robot_image.width - 1) else (point_x + 2))]
+
+    def __room_slice(self, center_x: int, center_y: int):
+        return np.index_exp[
+               center_y - round(self.__robot_image.height / 2): (center_y + round(self.__robot_image.width / 2)),
+               center_x - round(self.__robot_image.height / 2): center_x + round(self.__robot_image.height / 2)]
+
+    def is_robot_in_collision(self, x: int, y: int) -> bool:
+        room_area = self.__room_array_yx[self.__room_slice(x, y)]
+        for point_yx in self.__robot_border_array_yx:
+            if pixel_is_black(self.__robot_array_yx[point_yx]) and pixel_is_black(room_area[point_yx]):
+                return True
+        return False
+
+
+def pixel_is_black(rgb_item: int) -> bool:
+    return rgb_item < 240  # matt pixel (241-255)
+
+
+def pixel_is_dark(rgb_item: int) -> bool:
+    return rgb_item < 30
+
+
+def pixel_is_white(rgb_item: int) -> bool:
+    return rgb_item >= 100

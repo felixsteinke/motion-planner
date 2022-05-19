@@ -2,16 +2,32 @@ from tkinter import *
 from tkinter.ttk import Notebook
 
 
-class MainFrame:
+class AppFrame:
     def __init__(self):
         self.root = self.__configure_root()
-        self.canvas_frame = self.__open_canvas_frame()
-        nb = Notebook(self.canvas_frame)  # Tab element in the Window.
-        self.notebook_page1 = Frame(nb)  # add Frames to the Notebook.
-        self.notebook_page2 = Frame(nb)
-        nb.add(self.notebook_page1, text='Workspace')  # Set Text of the Tabs.
-        nb.add(self.notebook_page2, text='Configspace')
+        self.__canvas = self.__open_canvas_frame()
+        nb = Notebook(self.__canvas)  # Tab element in the Window.
+        self.workspace_page = Frame(nb)  # add Frames to the Notebook.
+        self.configspace_page = Frame(nb)
+        nb.add(self.workspace_page, text='Workspace')  # Set Text of the Tabs.
+        nb.add(self.configspace_page, text='Configspace')
         nb.grid(row=1, columnspan=80, column=0)  # Set the grid position of the Notebook.
+
+    def paint_background(self, red: bool):
+        if red:  # if needs no '()' just ':' and indentation.
+            self.__canvas.config(background='red')  # sets the BG to red if collision is detected.
+        else:
+            self.__canvas.config(background='green')  # no collision BG = green.
+
+    def add_slider(self, column: int, action_ref) -> Scale:
+        slider = Scale(self.__canvas, from_=0, to=200, orient=HORIZONTAL, command=action_ref)
+        slider.config(length=600)  # more styling sets pixel length of the slider.
+        slider.grid(row=0, column=column)  # places the slider according to the layout options configured above.
+        return slider
+
+    def add_button(self, text: str, column: int, action_ref):
+        set_restart_button = Button(self.__canvas, text=text, command=action_ref)
+        set_restart_button.grid(row=0, column=column)
 
     def __open_canvas_frame(self) -> Frame:
         main_frame = Frame(self.root)
