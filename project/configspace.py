@@ -1,170 +1,147 @@
-import os
 import random
-import time
-from functools import partial
 from itertools import repeat
 from multiprocessing import Pool
-from tkinter import CENTER
+
 from dijkstar import Graph, find_path
-from resource_manager import open_image
 
-
-def distance(point_one, point_two):
-    return ((point_one[0] - point_two[0]) ** 2 +
-            (point_one[1] - point_two[1]) ** 2) ** 0.5
-
-
-def checkPathCollisionFree(collisionArray, pointList, t):
-    start = pointList[t[0]]
-    goal = pointList[t[1]]
-    steps = round(distance(start, goal))
-    for i in range(1, steps):
-        deltaX = round(i * float(goal[1] - start[1]) / float(steps))
-        deltaY = round(i * float(goal[0] - start[0]) / float(steps))
-        newX = start[1] + deltaX
-        newY = start[0] + deltaY
-        if collisionArray[newY][newX] == 0:
-            return None
-    return [t[0], t[1]]
-
-
-def tupleUnderDistance(collisionArray, pointList, d):
-    underDistance = []
-    for i in range(len(pointList) - 1):
-        for c in range(i + 1, len(pointList)):
-            if distance(pointList[i], pointList[c]) < d:
-                underDistance.append([i, c])
-    with Pool(4) as p:
-        collisionFree = p.starmap(checkPathCollisionFree,
-                                  zip(repeat(collisionArray), repeat(pointList), underDistance))
-    return filter(None, collisionFree)
+from collisionspace import Collisionspace
+from configspace_view import ConfigspaceView
+from utils import open_greyscale_bmp, GREYSCALE_BLACK
 
 
 class Configspace:  # shows the way of the robot the algorithm
+    def __init__(self, app_page, robot_name: str, collisionspace: Collisionspace):
+        robot_bmp = open_greyscale_bmp(robot_name)
+        self.__view = ConfigspaceView(app_page, robot_bmp, collisionspace.collision_image)
+        self.__min_x = robot_bmp.width
+        self.__max_x = collisionspace.collision_image.width - robot_bmp.width
+        self.__min_y = robot_bmp.height
+        self.__max_y = collisionspace.collision_image.height - robot_bmp.height
 
-    def __init__(self, robot_name, page, collisionspace):
-        self.collisionArray = collisionspace.collisionArray
-        self.initConfig = -1, -1  # position of the start Image
-        self.goalConfig = -1, -1  # position of the goal Image
-        self.solutionPath = []  # array of Waypoints
-        self.isInitialize = False  # flag for start & endpoint set
-        self.page = page  # setting the root of the second page for access on the Canvas.
-        self.xExt = 0  # Max x
-        self.yExt = 0  # Max y
-        self.canvas = page.winfo_children()[0]  # Canvas for 2D graphics.
-        robot_image = open_image(robot_name, 'bmp')
-        self.theOffsetX = int(robot_image.width / 2)  # haf of the pixel of the robot png.
-        self.theOffsetY = int(robot_image.height / 2)
-        self.graph = Graph()
+        self.__init_config_xy = []  # position of the start Image
+        self.__goal_config_xy = []  # position of the goal Image
 
-    def setDimensions(self, x, y):  # of the canvas
-        self.xExt = x  # set Max x
-        self.yExt = y  # set Max Y
-        self.canvas.config(bd=0, height=y, width=x)  # bd = Border just
-        # setting up the canvas dimensions + offset 2 times so the center of the set Robot is always inside.
-        self.drawSpace()  # actually drawing the canvas with borders and solution path
-        self.canvas.place(relx=0.5, rely=0.5, anchor=CENTER)  # placing the canvas on the second page
-        # self.canvas.pack(fill=BOTH, expand=1) (NOT MY COMMENT)
+        self.__collision_array_yx = collisionspace.collision_array
 
-    def drawSpace(self):
-        # Open: remove offset, canvas.config offset buggy (NOT MY COMMENT)
-        # self.canvas.delete("all")  # deletes all drawings from the canvas
-        y = self.yExt  # set local y to Max y of the
-        x = self.xExt  # set local x to Max x of the
-        self.canvas.create_line(self.theOffsetX, self.theOffsetY, self.theOffsetX, y - self.theOffsetY,
-                                fill='red')  # left border
-        self.canvas.create_line(self.theOffsetX, self.theOffsetY, x - self.theOffsetX, self.theOffsetY,
-                                fill='red')  # upper border
-        self.canvas.create_line(x - self.theOffsetX, y - self.theOffsetY, x - self.theOffsetX, self.theOffsetY,
-                                fill='red')  # right
-        self.canvas.create_line(x - self.theOffsetX, y - self.theOffsetY, self.theOffsetX, y - self.theOffsetY,
-                                fill='red')  # lower
+        self.edge_graph = Graph()
+        self.solution_path_yx = []  # array of Waypoints
 
-        if len(self.solutionPath) > 0: self.drawSolutionPath()  # if the Solution Path is calculated draw it.
-        if self.initConfig[0] > -1: self.drawConfiguration(self.initConfig[0], self.initConfig[1], 'green')  # if the
-        # start Point is set draw it in green color.
-        if self.goalConfig[0] > -1: self.drawConfiguration(self.goalConfig[0], self.goalConfig[1], 'red')  # if the
-        # goal Point is set draw it in red color.
+    def __add_bidirectional_edge(self, node_index1, node_index2, distance):
+        self.edge_graph.add_edge(node_index1, node_index2, distance)
+        self.edge_graph.add_edge(node_index2, node_index1, distance)
 
-    def drawConfiguration(self, x, y, color):  # draws a dot on the Canvas (used above for the start and goal)
-        r = 5  # radius of the colored dot
-        self.canvas.create_oval(x - r,
-                                y - r,
-                                x + r,
-                                y + r,
-                                fill=color)  # draw color
+    def __draw_configuration_state(self):
+        self.__view.reset()
+        if self.__init_config_xy:
+            self.__view.draw_point(self.__init_config_xy[0], self.__init_config_xy[1], 'green')
+        if self.__goal_config_xy:
+            self.__view.draw_point(self.__goal_config_xy[0], self.__goal_config_xy[1], 'red')
 
-    def drawSolutionPath(self):  # Draws a line connecting all the points from the solution-path
-        for i in range(1, len(self.solutionPath)):  # iterate over points from solution-path
-            c1 = self.solutionPath[i - 1]  # c1 is the point for the start of the line at loop cycle i
-            c2 = self.solutionPath[i]  # c2 is the point for the end of the line at loop cycle i
-            self.canvas.create_line(c1[0], c1[1],
-                                    c2[0], c2[1], fill='purple1')
-            # draws line from c1 to c2 in purple color
+    def __convert_solution_path(self, path, vertex_list_yx):
+        start_vertex_yx = vertex_list_yx[0]
+        self.solution_path_yx.append(start_vertex_yx)
+        self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'green')
+        for vertex_index in path.nodes:
+            if vertex_index == 0:
+                continue
+            next_vertex_yx = vertex_list_yx[vertex_index]
+            self.__view.draw_point(next_vertex_yx[1], next_vertex_yx[0], 'purple')
+            self.__view.draw_line_yx(start_vertex_yx, next_vertex_yx, 'red')
+            self.solution_path_yx.append(next_vertex_yx)
+            start_vertex_yx = next_vertex_yx
+        self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'red')
 
-    def drawLine(self, start, goal, color):
-        self.canvas.create_line(start[1], start[0], goal[1], goal[0], fill=color)
+    def reset(self) -> None:
+        self.__init_config_xy = []
+        self.__goal_config_xy = []
+        self.solution_path_yx = []
+        self.edge_graph = Graph()
+        self.__view.reset()
 
-    def setInitialSolutionPath(self):  # fills the self.solution path array with points in a straight line from start
-        # to goal points
-        resolution = max(abs(
-            self.initConfig[0] - self.goalConfig[0]), abs(self.goalConfig[1] - self.goalConfig[1]))  # calculating
-        # the distance between start and goal in x and y and taking the higher value.
+    def set_init_config(self, x, y):
+        self.__init_config_xy = [x, y]
+        self.__draw_configuration_state()
 
-        self.solutionPath.append(self.initConfig)  # adding the start point to the solution path
-        for i in range(1, resolution):
-            deltaX = round(i * float(self.goalConfig[0] - self.initConfig[0]) / float(resolution))  # calculating the
-            # distance to go in x direction for a straight connection of start and goal
-            deltaY = round(i * float(self.goalConfig[1] - self.initConfig[1]) / float(resolution))  # calculating the
-            # distance to go in y direction for a straight connection of start and goal
-            newX = self.initConfig[0] + deltaX  # calculating new coords with origin and current delta at time i
-            newY = self.initConfig[1] + deltaY  # ''
-            self.solutionPath.append((newX, newY))  # add new Point to the solution path
-        self.solutionPath.append(self.goalConfig)  # add goal to the solution path
-        self.setPRMSolutionPath()
+    def set_goal_config(self, x, y):
+        self.__goal_config_xy = [x, y]
+        self.__draw_configuration_state()
 
-    def randomPoint(self):
-        x = random.randrange(self.theOffsetX, self.xExt - self.theOffsetX)
-        y = random.randrange(self.theOffsetY, self.yExt - self.theOffsetY)
-        resultTuple = (y, x)
-        return resultTuple
+    def execute_SPRM_algorithm(self) -> None:
+        self.solution_path_yx = []
+        self.edge_graph = Graph()
+        distance_r = 80
+        point_samples_n = 1000
+        # add configuration to vertex structure
+        self.edge_graph.add_node(0)
+        self.edge_graph.add_node(1)
+        vertex_list_yx = [
+            (self.__init_config_xy[1], self.__init_config_xy[0]),
+            (self.__goal_config_xy[1], self.__goal_config_xy[0])]
 
-    def addPathToSolution(self, start, goal):
-        steps = round(distance(start, goal))
-        for i in range(1, steps):
-            deltaX = round(i * float(goal[1] - start[1]) / float(steps))
-            deltaY = round(i * float(goal[0] - start[0]) / float(steps))
-            newX = start[1] + deltaX
-            newY = start[0] + deltaY
-            self.solutionPath.append((newX, newY))
+        # calculate n free samples
+        for i in range(2, point_samples_n + 2):
+            while True:
+                free_sample_yx = random_point_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
+                if self.__collision_array_yx[free_sample_yx[0]][free_sample_yx[1]] > 1:
+                    self.edge_graph.add_node(i)
+                    vertex_list_yx.append(free_sample_yx)
+                    break
 
-    def setPRMSolutionPath(self):
-        self.graph.add_node(0)
-        self.graph.add_node(1)
-        pointsList = [(self.initConfig[1], self.initConfig[0]), (self.goalConfig[1], self.goalConfig[0])]
-        points = 1000
-        for i in range(2, points + 2):
-            foundFlag = True
-            while foundFlag:
-                newPoint = self.randomPoint()
-                if self.collisionArray[newPoint[0]][newPoint[1]] > 1:
-                    self.graph.add_node(i)
-                    pointsList.append(newPoint)
-                    foundFlag = False
-        for i in pointsList:
-            self.drawConfiguration(i[1], i[0], 'blue')
-        for t in tupleUnderDistance(self.collisionArray, pointsList, 80):
-            self.graph.add_edge(t[0], t[1], round(distance(pointsList[t[0]], pointsList[t[1]])))
-            self.graph.add_edge(t[1], t[0], round(distance(pointsList[t[1]], pointsList[t[0]])))
-            self.drawLine(pointsList[t[0]], pointsList[t[1]], 'yellow')
-        path = find_path(self.graph, 0, 1)
-        lastPoint = pointsList[0]
-        for n in path.nodes:
-            self.drawConfiguration(lastPoint[1], lastPoint[0], 'purple')
-            thisPoint = pointsList[n]
-            if not n == 0:
-                self.drawLine(lastPoint, thisPoint, 'pink')
-                self.addPathToSolution(lastPoint, thisPoint)
-            lastPoint = thisPoint
-        self.drawConfiguration(pointsList[0][1], pointsList[0][0], 'red')
-        self.drawConfiguration(pointsList[1][1], pointsList[1][0], 'green')
+        for point_index_tuple in tuples_under_distance(self.__collision_array_yx, vertex_list_yx, distance_r):
+            self.__add_bidirectional_edge(point_index_tuple[0],
+                                          point_index_tuple[1],
+                                          round(calc_distance(
+                                              vertex_list_yx[point_index_tuple[0]],
+                                              vertex_list_yx[point_index_tuple[1]])))
+            self.__view.draw_line_yx(vertex_list_yx[point_index_tuple[0]],
+                                     vertex_list_yx[point_index_tuple[1]],
+                                     'orange')
+        path = find_path(self.edge_graph, 0, 1)
+
+        # draw solution
+        for i in vertex_list_yx:
+            self.__view.draw_point(i[1], i[0], 'blue')
+        self.__convert_solution_path(path, vertex_list_yx)
+
+
+def random_point_yx(min_width: int, max_width: int, min_height: int, max_height: int) -> []:
+    x = random.randrange(min_width, max_width)
+    y = random.randrange(min_height, max_height)
+    return [y, x]
+
+
+def calc_distance(point_1yx, point_2yx) -> float:
+    return ((point_1yx[0] - point_2yx[0]) ** 2 +
+            (point_1yx[1] - point_2yx[1]) ** 2) ** 0.5
+
+
+def tuples_under_distance(collision_array_yx, points_yx: [], distance) -> []:
+    points_neighbour_tuples = []
+    for point_index in range(len(points_yx) - 1):
+        for next_point_index in range(point_index + 1, len(points_yx)):
+            if calc_distance(points_yx[point_index], points_yx[next_point_index]) < distance:
+                points_neighbour_tuples.append([point_index, next_point_index])
+    with Pool(4) as p:
+        valid_edge = p.starmap(
+            edge_without_collision,
+            zip(repeat(collision_array_yx), repeat(points_yx), points_neighbour_tuples))
+    return filter(None, valid_edge)
+
+
+def edge_without_collision(collision_array_yx, points_yx: [], points_index_tuple: []):
+    start_yx = points_yx[points_index_tuple[0]]
+    goal_yx = points_yx[points_index_tuple[1]]
+    step_range = round(calc_distance(start_yx, goal_yx))
+    for step in range(1, step_range):
+        point_xy = calc_point_between_xy(start_yx, goal_yx, step, step_range)
+        if collision_array_yx[point_xy[1]][point_xy[0]] == GREYSCALE_BLACK:
+            return None
+    return points_index_tuple
+
+
+def calc_point_between_xy(start_yx, goal_yx, step, step_range) -> []:
+    delta_x = round(step * float(goal_yx[1] - start_yx[1]) / float(step_range))
+    delta_y = round(step * float(goal_yx[0] - start_yx[0]) / float(step_range))
+    new_x = start_yx[1] + delta_x
+    new_y = start_yx[0] + delta_y
+    return [new_x, new_y]

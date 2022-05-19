@@ -1,81 +1,75 @@
 import os
 import sys
-from tkinter import *
 
+from app_window import AppWindow
+from option_window import OptionWindow
+from workspace import Workspace
 from collisionspace import Collisionspace
 from configspace import Configspace
-from controller import Controller
-from project.main_frame import MainFrame
-from project.option_frame import OptionFrame
-from workspace import Workspace
 
 
-def demo():  # Method Declaration the indentation works as '{'
+def main():  # Method Declaration the indentation works as '{'
 
-    main_frame = MainFrame()
-    options = OptionFrame()
-    workspace = Workspace(options.room_name, options.robot_name, main_frame.notebook_page1)
-    collisionspace = Collisionspace(options.room_name, options.robot_name, workspace, main_frame.notebook_page2)
-    configspace = Configspace(options.robot_name, main_frame.notebook_page2, collisionspace)
-    controller = Controller(workspace, configspace, collisionspace)
+    app_window = AppWindow()
+    options = OptionWindow()
 
-    workspace.drawAll(workspace.currentPos[0], workspace.currentPos[1])  # Method called from the workspace.drawAll
+    room_name = options.room_name
+    robot_name = options.robot_name
 
-    def callback(event):  # Method for use with the mouse-callback-button.
-        # print ("clicked at", event.x, event.y)
-        controller.drawMouseOffSet(event.x, event.y)
-        controller.drawCurrentPos()
-        if controller.isInCollision():  # if needs no '()' just ':' and indentation.
-            main_frame.canvas_frame.config(background='red')
-            main_frame.canvas_frame.config(background='red')
+    workspace = Workspace(app_window.workspace_page, room_name, robot_name)
+    collisionspace = Collisionspace(room_name, robot_name, workspace)
+    configspace = Configspace(app_window.configspace_page, robot_name, collisionspace)
 
-        else:
-            main_frame.canvas_frame.config(background='green')
+    # === ACTIONS ======================================================================================================
 
-    workspace.label.bind("<Button-1>", callback)  # bind callback method to left-mouse-button to button.
+    def mouse_callback(event):  # Method for use with the mouse-callback-button.
+        workspace.current_position_xy = [event.x, event.y]
+        workspace.draw_robot_state(event.x, event.y)
+        app_window.paint_background(workspace.is_in_collision(event.x, event.y))
 
-    def moveRobotOnPath(val):  # shows the robot on the current slider timestamp
-        if controller.isAllInitialized():  # checks initialization of the config- and workspace.
-            controller.setSolutionPathOnCurrentPos(int(val))  # provides the controller with the slider value
-            controller.drawCurrentPos()  # controller gets a draw update call.
-            if controller.isInCollision():  # collision check collision (till now only returns false)
-                main_frame.canvas_frame.config(background='red')  # sets the BG to red if collision is detected.
-            else:
-                main_frame.canvas_frame.config(background='green')  # no collision BG = green.
+    def move_slider(val):  # shows the robot on the current slider timestamp
+        if configspace.solution_path_yx:
+            point_yx = configspace.solution_path_yx[int(val)]
+            workspace.draw_robot_state(point_yx[1], point_yx[0])
+            app_window.paint_background(workspace.is_in_collision(point_yx[1], point_yx[0]))
 
-    slider = Scale(main_frame.canvas_frame, from_=0, to=200, orient=HORIZONTAL,
-                   command=moveRobotOnPath)  # Slider gets styled and bind
-    # to method above.
-    slider.config(length=600)  # more styling sets pixel length of the slider.
+    def set_init_action():  # method to get bound to the set_init_button.
+        if workspace.current_position_xy:
+            workspace.set_init_config(workspace.current_position_xy[0], workspace.current_position_xy[1])
+            configspace.set_init_config(workspace.current_position_xy[0], workspace.current_position_xy[1])
 
-    def set_goal():  # method to get bound to the setGoalButton
-        controller.setCurrentPosAsGoal()  # sets the end Position, obviously.
-        slider['from_'] = 0  # sets the origin of the time slider.
-        slider['to_'] = len(configspace.solutionPath) - 1  # sets the slider upper Limit to the length of the current
-        # solution so you can cycle through.
+    def set_goal_action():  # method to get bound to the setGoalButton
+        if workspace.current_position_xy:
+            workspace.set_goal_config(workspace.current_position_xy[0], workspace.current_position_xy[1])
+            configspace.set_goal_config(workspace.current_position_xy[0], workspace.current_position_xy[1])
 
-    setGoalButton = Button(main_frame.canvas_frame, text='Set Goal',
-                           command=set_goal)  # bind method from above to the button.
-    setGoalButton.grid(row=0, column=2)  # set the gid position of the button element.
+    def execute_sprm():
+        configspace.execute_SPRM_algorithm()
+        slider['from_'] = 0
+        slider['to_'] = len(configspace.solution_path_yx) - 1
 
-    def restart():
+    def reset_action():
+        workspace.reset()
+        configspace.reset()
+
+    def restart_action():
         os.execl(sys.executable, os.path.abspath(__file__), *sys.argv)
 
-    setRestartButton = Button(main_frame.canvas_frame, text='Restart',
-                              command=restart)  # bind method from above to the button.
-    setRestartButton.grid(row=0, column=3)
+    # === ACTIONS BINDING ==============================================================================================
 
-    def set_init():  # method to get bound to the setInitButton.
-        controller.setCurrentPosAsInit()  # sets the position of the starting point and draws it.
+    workspace.bind_click_callback(mouse_callback)
+    slider = app_window.add_slider(0, move_slider)
+    app_window.add_button('Set Init', 1, set_init_action)
+    app_window.add_button('Set Goal', 2, set_goal_action)
+    app_window.add_button('Execute sPRM', 3, execute_sprm)
+    app_window.add_button('Reset', 4, reset_action)
+    app_window.add_button('Restart', 5, restart_action)
 
-    setInitButton = Button(main_frame.canvas_frame, text='Set Init', command=set_init)  # binding of the button.
-    setInitButton.grid(row=0, column=1)  # setting the grid layout position of the button.
+    # === APP THREAD ===================================================================================================
 
-    slider.grid(row=0, column=0)  # places the slider according to the layout options configured above.
-
-    main_frame.root.mainloop()  # gets a thread for the GUI to have the program start and die with the window.
+    app_window.root.mainloop()  # gets a thread for the GUI to have the program start and die with the window.
 
 
 if __name__ == "__main__":  # main method is defined by __main__ and the if __name__ thing is just python way of
     # saying that the name of the current main is the title of the file.
-    demo()  # runs the method demo in main.
+    main()  # runs the method demo in main.

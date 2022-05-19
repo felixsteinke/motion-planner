@@ -1,8 +1,8 @@
 from tkinter import *  # graphics Lib (not good to use)
-from resource_manager import resource_files
+from utils import list_resource_files
 
 
-class OptionFrame:
+class OptionWindow:
     def __init__(self):
         selected_options = self.__open_popup()
         self.robot_name = selected_options[0]
@@ -16,8 +16,8 @@ class OptionFrame:
         label = Label(window, text="Choose your Configuration.")
         label.grid(row=0, column=0, sticky='nsew')
 
-        robot_selector = self.__configure_selector(window, row=1, options=resource_files('robot_', '.bmp'))
-        room_selector = self.__configure_selector(window, row=2, options=resource_files('room_', '.bmp'))
+        robot_selector = self.__configure_selector(window, row=1, options=list_resource_files('robot_', '.bmp'))
+        room_selector = self.__configure_selector(window, row=2, options=list_resource_files('room_', '.bmp'))
         Button(window, text="Okay", command=window.destroy).grid(row=3, column=0, sticky='nsew')
 
         window.geometry(self.__frame_geometry(window.winfo_screenwidth(), window.winfo_screenheight()))
