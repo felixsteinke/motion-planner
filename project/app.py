@@ -21,15 +21,14 @@ def main():  # Method Declaration the indentation works as '{'
     configspace = Configspace(app_frame.configspace_page, robot_name, collisionspace)
 
     def mouse_callback(event):  # Method for use with the mouse-callback-button.
-        # print ("clicked at", event.x, event.y)
         workspace.current_position_xy = [event.x, event.y]
-        workspace.draw_robot(event.x, event.y)
+        workspace.draw_robot_state(event.x, event.y)
         app_frame.paint_background(workspace.is_in_collision(event.x, event.y))
 
     def move_slider(val):  # shows the robot on the current slider timestamp
         if configspace.solutionPath:
             point_xy = configspace.solutionPath[int(val)]
-            workspace.draw_robot(point_xy[0], point_xy[1])
+            workspace.draw_robot_state(point_xy[0], point_xy[1])
             app_frame.paint_background(workspace.is_in_collision(point_xy[0], point_xy[1]))
 
     def set_goal_action():  # method to get bound to the setGoalButton
