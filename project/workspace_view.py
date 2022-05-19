@@ -14,20 +14,20 @@ class WorkspaceView:
 
         self.__style_current_background()
 
-    def __style_current_background(self):
+    def __style_current_background(self) -> None:
         tk_image = ImageTk.PhotoImage(self.__current_image)
         self.__background.configure(image=tk_image)  # update image of label
         self.__background.image = tk_image  # set image to draw (garbage collection reasons)
         self.__background.pack(side="bottom", fill="both", expand=YES)  # packing the label to gid layout
 
-    def set_click_callback(self, action_ref):
+    def set_click_callback(self, action_ref) -> None:
         self.__background.bind("<Button-1>", action_ref)
 
-    def reset(self):
+    def reset(self) -> None:
         self.__current_image = self.__room_rgba
         self.__style_current_background()
 
-    def draw_robot(self, x_center, y_center):
+    def draw_robot(self, x_center, y_center) -> None:
         transformed_x = x_center - round(0.5 * self.__robot_rgba.width)
         transformed_y = y_center - round(0.5 * self.__robot_rgba.height)
 

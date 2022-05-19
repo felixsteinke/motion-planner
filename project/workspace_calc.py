@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.lib import index_tricks
 
 
 class WorkspaceCalculator:
@@ -21,7 +22,7 @@ class WorkspaceCalculator:
                             break
         return border_pixels_yx
 
-    def __robot_slice(self, point_x: int, point_y: int):
+    def __robot_slice(self, point_x: int, point_y: int) -> index_tricks:
         # not necessary to understand just some conditions for the array borders
         return np.index_exp[
                (point_y if (point_y == 0) else (point_y - 1)):
@@ -29,7 +30,7 @@ class WorkspaceCalculator:
                (point_x if (point_x == 0) else (point_x - 1)):
                (point_x + 1 if (point_x == self.__robot_image.width - 1) else (point_x + 2))]
 
-    def __room_slice(self, center_x: int, center_y: int):
+    def __room_slice(self, center_x: int, center_y: int) -> index_tricks:
         return np.index_exp[
                center_y - round(self.__robot_image.height / 2): (center_y + round(self.__robot_image.width / 2)),
                center_x - round(self.__robot_image.height / 2): center_x + round(self.__robot_image.height / 2)]
