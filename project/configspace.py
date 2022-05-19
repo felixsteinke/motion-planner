@@ -5,7 +5,7 @@ from tkinter import *
 
 from PIL import ImageTk
 from dijkstar import Graph, find_path
-from resource_manager import open_greyscale_bmp
+from utils import open_greyscale_bmp
 from collisionspace import Collisionspace
 
 

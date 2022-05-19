@@ -2,7 +2,7 @@ import numpy as np
 from numpy.core.records import ndarray
 import hashlib
 from tqdm.tk import trange
-from resource_manager import *
+from utils import *
 from workspace import Workspace
 
 
@@ -10,46 +10,45 @@ class Collisionspace:
 
     def __init__(self, room_name: str, robot_name: str, workspace: Workspace):
         self.__workspace = workspace
-        robot_image = open_image(robot_name, 'bmp')
-        self.__robot_offset_x = round(robot_image.width / 2)  # haf of the pixel of the robot png.
-        self.__robot_offset_y = round(robot_image.height / 2)
-        self.robot_array = get_robot_array(robot_name)
+        self.__robot_image = open_image(robot_name, 'bmp')
+        self.__room_image = open_greyscale_bmp(room_name)
 
-        room_image = open_greyscale_bmp(room_name)
-        self.__max_x = room_image.width  # Max x
-        self.__max_y = room_image.height  # Max y
+        self.robot_array = robot_array_black_white(robot_name)  # TODO unused
 
-        current_hash_digest = hashlib.md5(robot_image.tobytes() + room_image.tobytes()).hexdigest()
-        self.__init_collision_data(current_hash_digest)
-
-    def __init_collision_data(self, hash_digest: str):
-        if collision_image_exists(hash_digest):
-            self.collision_image = open_collision_image(hash_digest)
+        current_hash_digest = hashlib.md5(self.__robot_image.tobytes() + self.__room_image.tobytes()).hexdigest()
+        if collision_image_exists(current_hash_digest):
+            self.collision_image = open_collision_image(current_hash_digest)
             self.collision_array = np.array(self.collision_image)
         else:
-            self.collision_array = self.__calculate_new_array()
+            self.collision_array = self.__calculate_new_collision_array()
             self.collision_image = Image.fromarray(self.collision_array)
-            store_collision_image(hash_digest, self.collision_array)
+            store_collision_image(current_hash_digest, self.collision_array)
 
-    def __calculate_new_array(self) -> ndarray:
-        print("Calculating new collision image please be patient.")
-        collision_array = self.__get_black_room_array()
-        for y in trange(self.__robot_offset_y, self.__max_y - self.__robot_offset_y):
-            for x in range(self.__robot_offset_x, self.__max_x - self.__robot_offset_x):
+    def __calculate_new_collision_array(self) -> ndarray:
+        print("Calculating new collision array please be patient.")
+        max_x = self.__room_image.width
+        max_y = self.__room_image.height
+        offset_x = round(self.__robot_image.width / 2)
+        offset_y = round(self.__robot_image.height / 2)
+
+        collision_array = array_black(max_y, max_x)
+        for y in trange(offset_y, max_y - offset_y):
+            for x in range(offset_x, max_x - offset_x):
                 if not self.__workspace.is_in_collision(x, y):
-                    collision_array[y][x] = 255  # add robot image at x,y position if there is collision
+                    collision_array[y][x] = GREYSCALE_WHITE
         return collision_array
 
-    def __get_black_room_array(self) -> ndarray:
-        return np.zeros(self.__max_y * self.__max_x).reshape(self.__max_y, self.__max_x)
+
+def array_black(max_y, max_x) -> ndarray:
+    return np.zeros(max_y * max_x).reshape(max_y, max_x)
 
 
-def get_robot_array(robot_name: str) -> ndarray:
+def robot_array_black_white(robot_name: str) -> ndarray:
     robot_image = open_greyscale_bmp(robot_name)
     robot_array = np.array(robot_image).flatten()
-    for i in robot_array:
-        if i < 240:
-            robot_array[i] = 0
+    for value in robot_array:
+        if greyscale_not_white(value):
+            robot_array[value] = GREYSCALE_BLACK
         else:
-            robot_array[i] = 255
+            robot_array[value] = GREYSCALE_WHITE
     return robot_array.reshape(robot_image.height, robot_image.width)

@@ -1,11 +1,31 @@
 import os
+
 from PIL import Image, ImageOps
 
 RESOURCE_PATH = '../resources'
 COLLISION_RESOURCE_PATH = RESOURCE_PATH + '/collision'
 
+GREYSCALE_BLACK = 0
+GREYSCALE_WHITE = 255
 
-def resource_files(starts_with: str, ends_with: str) -> []:
+
+def greyscale_is_black(value: int) -> bool:
+    return value < 240  # matt pixel (241-255)
+
+
+def greyscale_is_dark(value: int) -> bool:
+    return value < 30
+
+
+def greyscale_not_dark(value: int) -> bool:
+    return value >= 100
+
+
+def greyscale_not_white(value: int) -> bool:
+    return value < 240
+
+
+def list_resource_files(starts_with: str, ends_with: str) -> []:
     file_list = []
     for file in os.listdir(RESOURCE_PATH):
         if file.startswith(starts_with) and file.endswith(ends_with):

@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.lib import index_tricks
 
+from utils import greyscale_not_dark, greyscale_is_dark, greyscale_is_black
+
 
 class WorkspaceCalculator:
     def __init__(self, room_greyscale_image, robot_greyscale_image):
@@ -13,11 +15,11 @@ class WorkspaceCalculator:
         border_pixels_yx = []  # set up the result set
         for robot_px in range(self.__robot_image.width):  # traversing the Pixels of the robot
             for robot_py in range(self.__robot_image.height):
-                if pixel_is_dark(self.__robot_array_yx[robot_py, robot_px]):
+                if greyscale_is_dark(self.__robot_array_yx[robot_py, robot_px]):
                     robot_area = self.__robot_array_yx[self.__robot_slice(robot_px, robot_py)]
                     neighbor_pixels = np.array(robot_area).flatten()  # make array 1D to traverse Pixels easy
                     for rgb_pixel in neighbor_pixels:
-                        if pixel_is_white(rgb_pixel):
+                        if greyscale_not_dark(rgb_pixel):
                             border_pixels_yx.append((robot_py, robot_px))
                             break
         return border_pixels_yx
@@ -38,18 +40,6 @@ class WorkspaceCalculator:
     def is_robot_in_collision(self, x: int, y: int) -> bool:
         room_area = self.__room_array_yx[self.__room_slice(x, y)]
         for point_yx in self.__robot_border_array_yx:
-            if pixel_is_black(self.__robot_array_yx[point_yx]) and pixel_is_black(room_area[point_yx]):
+            if greyscale_is_black(self.__robot_array_yx[point_yx]) and greyscale_is_black(room_area[point_yx]):
                 return True
         return False
-
-
-def pixel_is_black(rgb_item: int) -> bool:
-    return rgb_item < 240  # matt pixel (241-255)
-
-
-def pixel_is_dark(rgb_item: int) -> bool:
-    return rgb_item < 30
-
-
-def pixel_is_white(rgb_item: int) -> bool:
-    return rgb_item >= 100

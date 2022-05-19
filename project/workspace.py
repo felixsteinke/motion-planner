@@ -1,4 +1,4 @@
-from resource_manager import open_image, open_greyscale_bmp
+from utils import open_image, open_greyscale_bmp
 from workspace_calc import WorkspaceCalculator
 from workspace_view import WorkspaceView
 
