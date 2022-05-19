@@ -28,10 +28,10 @@ def main():  # Method Declaration the indentation works as '{'
         app_window.paint_background(workspace.is_in_collision(event.x, event.y))
 
     def move_slider(val):  # shows the robot on the current slider timestamp
-        if configspace.solution_path:
-            point_xy = configspace.solution_path[int(val)]
-            workspace.draw_robot_state(point_xy[0], point_xy[1])
-            app_window.paint_background(workspace.is_in_collision(point_xy[0], point_xy[1]))
+        if configspace.solution_path_yx:
+            point_yx = configspace.solution_path_yx[int(val)]
+            workspace.draw_robot_state(point_yx[1], point_yx[0])
+            app_window.paint_background(workspace.is_in_collision(point_yx[1], point_yx[0]))
 
     def set_init_action():  # method to get bound to the set_init_button.
         if workspace.current_position_xy:
@@ -45,8 +45,8 @@ def main():  # Method Declaration the indentation works as '{'
 
     def execute_sprm():
         configspace.execute_SPRM_algorithm()
-        slider['from_'] = 0  # sets the origin of the time slider.
-        slider['to_'] = len(configspace.solution_path) - 1  # sets the slider upper Limit to the length of the current
+        slider['from_'] = 0
+        slider['to_'] = len(configspace.solution_path_yx) - 1
 
     def reset_action():
         workspace.reset()

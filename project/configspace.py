@@ -24,7 +24,7 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__collision_array_yx = collisionspace.collision_array
 
         self.edge_graph = Graph()
-        self.solution_path = []  # array of Waypoints
+        self.solution_path_yx = []  # array of Waypoints
 
     def __add_bidirectional_edge(self, node_index1, node_index2, distance):
         self.edge_graph.add_edge(node_index1, node_index2, distance)
@@ -37,10 +37,24 @@ class Configspace:  # shows the way of the robot the algorithm
         if self.__goal_config_xy:
             self.__view.draw_point(self.__goal_config_xy[0], self.__goal_config_xy[1], 'red')
 
+    def __convert_solution_path(self, path, vertex_list_yx):
+        start_vertex_yx = vertex_list_yx[0]
+        self.solution_path_yx.append(start_vertex_yx)
+        self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'green')
+        for vertex_index in path.nodes:
+            if vertex_index == 0:
+                continue
+            next_vertex_yx = vertex_list_yx[vertex_index]
+            self.__view.draw_point(next_vertex_yx[1], next_vertex_yx[0], 'purple')
+            self.__view.draw_line_yx(start_vertex_yx, next_vertex_yx, 'red')
+            self.solution_path_yx.append(next_vertex_yx)
+            start_vertex_yx = next_vertex_yx
+        self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'red')
+
     def reset(self) -> None:
         self.__init_config_xy = []
         self.__goal_config_xy = []
-        self.solution_path = []
+        self.solution_path_yx = []
         self.edge_graph = Graph()
         self.__view.reset()
 
@@ -53,7 +67,7 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__draw_configuration_state()
 
     def execute_SPRM_algorithm(self) -> None:
-        self.solution_path = []
+        self.solution_path_yx = []
         self.edge_graph = Graph()
         distance_r = 80
         point_samples_n = 1000
@@ -87,7 +101,7 @@ class Configspace:  # shows the way of the robot the algorithm
         # draw solution
         for i in vertex_list_yx:
             self.__view.draw_point(i[1], i[0], 'blue')
-        self.__view.draw_path(path, vertex_list_yx)
+        self.__convert_solution_path(path, vertex_list_yx)
 
 
 def random_point_yx(min_width: int, max_width: int, min_height: int, max_height: int) -> []:

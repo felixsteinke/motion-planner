@@ -50,18 +50,6 @@ class ConfigspaceView:
                                   center_y + radius,
                                   fill=color)
 
-    def draw_path(self, path, vertex_list_yx) -> None:
-        start_vertex_yx = vertex_list_yx[0]
-        self.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'green')
-        for vertex_index in path.nodes:
-            if vertex_index == 0:
-                continue
-            next_vertex_yx = vertex_list_yx[vertex_index]
-            self.draw_point(next_vertex_yx[1], next_vertex_yx[0], 'purple')
-            self.draw_line_yx(start_vertex_yx, next_vertex_yx, 'red')
-            start_vertex_yx = next_vertex_yx
-        self.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'red')
-
     def draw_line_xy(self, start_point: [], goal_point: [], color) -> None:
         self.__canvas.create_line(start_point[0], start_point[1], goal_point[0], goal_point[1], fill=color)
 
