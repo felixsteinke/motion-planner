@@ -1,16 +1,15 @@
 import random
 from itertools import repeat
 from multiprocessing import Pool
-from tkinter import *
 
-from PIL import ImageTk
 from dijkstar import Graph, find_path
-from utils import open_greyscale_bmp
+
 from collisionspace import Collisionspace
+from configspace_view import ConfigspaceView
+from utils import open_greyscale_bmp
 
 
 class Configspace:  # shows the way of the robot the algorithm
-
     def __init__(self, app_page, robot_name: str, collisionspace: Collisionspace):
         robot_bmp = open_greyscale_bmp(robot_name)
         real_max_width = collisionspace.collision_image.width
@@ -20,21 +19,35 @@ class Configspace:  # shows the way of the robot the algorithm
         self.min_height = robot_bmp.height
         self.max_height = real_max_height - robot_bmp.height
         self.collision_array = collisionspace.collision_array
-        self.__calculator = ConfigspaceCalculator(real_max_width, real_max_height, robot_bmp)
-        self.__view = ConfigspaceView(app_page, real_max_width, real_max_height, robot_bmp,
-                                      collisionspace.collision_image)
+        self.__view = ConfigspaceView(app_page, robot_bmp, collisionspace.collision_image)
 
-        self.__init_config_xy = -1, -1  # position of the start Image
-        self.__goal_config_xy = -1, -1  # position of the goal Image
+        self.__init_config_xy = []  # position of the start Image
+        self.__goal_config_xy = []  # position of the goal Image
 
-        self.solutionPath = []  # array of Waypoints
+        self.solution_path = []  # array of Waypoints
         self.graph = Graph()
+
+    def __draw_configuration_state(self):
+        self.__view.reset()
+        if self.__init_config_xy:
+            self.__view.draw_point(self.__init_config_xy[0], self.__init_config_xy[1], 'green')
+        if self.__goal_config_xy:
+            self.__view.draw_point(self.__goal_config_xy[0], self.__goal_config_xy[1], 'red')
+
+    def reset(self) -> None:
+        self.__init_config_xy = []
+        self.__goal_config_xy = []
+        self.solution_path = []
+        self.graph = Graph()
+        self.__view.reset()
 
     def set_init_config(self, x, y):
         self.__init_config_xy = [x, y]
+        self.__draw_configuration_state()
 
     def set_goal_config(self, x, y):
         self.__goal_config_xy = [x, y]
+        self.__draw_configuration_state()
 
     def execute_SPRM_algorithm(self) -> None:
         self.graph.add_node(0)
@@ -51,7 +64,7 @@ class Configspace:  # shows the way of the robot the algorithm
                     points_list.append(new_point)
                     found_flag = False
         for i in points_list:
-            self.__view.draw_dot(i[1], i[0], 'blue')
+            self.__view.draw_point(i[1], i[0], 'blue')
         for point_tuple in tuples_under_distance(self.collision_array, points_list, 80):
             self.graph.add_edge(point_tuple[0], point_tuple[1],
                                 round(calc_distance(points_list[point_tuple[0]], points_list[point_tuple[1]])))
@@ -61,72 +74,11 @@ class Configspace:  # shows the way of the robot the algorithm
         path = find_path(self.graph, 0, 1)
         last_point = points_list[0]
         self.__view.draw_path(path.nodes)
-        self.__view.draw_dot(points_list[0][1], points_list[0][0], 'red')
-        self.__view.draw_dot(points_list[1][1], points_list[1][0], 'green')
+        self.__view.draw_point(points_list[0][1], points_list[0][0], 'red')
+        self.__view.draw_point(points_list[1][1], points_list[1][0], 'green')
 
 
-class ConfigspaceView:
-    def __init__(self, frame, max_width: int, max_height: int, robot_bmp: Image, collision_image: Image):
-        self.root_frame = frame
-        self.canvas = Canvas(frame)  # Canvas for 2D graphics.
-        self.robot_bmp = robot_bmp
-        self.__style_canvas(collision_image)
-
-    def __style_canvas(self, collision_image):
-        self.canvas.pack(expand=YES, fill=BOTH)
-        self.canvas.config(bd=0, width=collision_image.width, height=collision_image.height)  # bd = Border just
-        collision_photo = ImageTk.PhotoImage(collision_image)
-        self.canvas.create_image(0, 0, image=collision_photo, anchor=NW)
-        self.canvas.place(relx=0.5, rely=0.5, anchor=CENTER)  # placing the canvas on the second page
-        self.__draw_border(collision_image.width, collision_image.height, self.robot_bmp)
-
-    def __draw_border(self, max_x: int, max_y: int, robot_image):
-        # Open: remove offset, canvas.config offset buggy (NOT MY COMMENT)
-        # self.canvas.delete("all")  # deletes all drawings from the canvas
-        offset_x = int(robot_image.width / 2)  # haf of the pixel of the robot png.
-        offset_y = int(robot_image.height / 2)
-
-        top_left_xy = [offset_x, offset_y]
-        top_right_xy = [max_x - offset_x, offset_y]
-        bottom_left_xy = [offset_x, max_y - offset_y]
-        bottom_right_xy = [max_x - offset_x, max_y - offset_y]
-
-        self.draw_line(top_left_xy, top_right_xy, 'red')
-        self.draw_line(top_right_xy, bottom_right_xy, 'red')
-        self.draw_line(bottom_right_xy, bottom_left_xy, 'red')
-        self.draw_line(bottom_left_xy, top_left_xy, 'red')
-
-    def __draw_line(self, start_x, start_y, goal_x, goal_y, color):
-        self.canvas.create_line(start_x, start_y, goal_x, goal_y, fill=color)
-
-    def draw_dot(self, center_x, center_y, color):
-        radius = 5  # radius of the colored dot
-        self.canvas.create_oval(center_x - radius,
-                                center_y - radius,
-                                center_x + radius,
-                                center_y + radius,
-                                fill=color)  # draw color
-
-    def draw_path(self, points: []):
-        for i in range(1, len(points)):  # iterate over points from solution-path
-            start_point = points[i - 1]  # point for the start of the line at loop cycle i
-            goal_point = points[i]  # point for the end of the line at loop cycle i
-            self.draw_dot(start_point[0], start_point[1], 'purple')
-            self.draw_line(start_point, goal_point, 'pink')
-
-    def draw_line(self, start_point: [], goal_point: [], color):
-        self.__draw_line(start_point[0], start_point[1], goal_point[0], goal_point[1], color)
-
-
-class ConfigspaceCalculator:
-    def __init__(self, max_width: int, max_height: int, robot_bmp):
-        self.min_width = robot_bmp.width
-        self.max_width = max_width - robot_bmp.width
-        self.min_height = robot_bmp.height
-        self.max_height = max_height - robot_bmp.height
-
-
-def random_point_yx(min_width, max_width, min_height, max_height) -> []:
+def random_point_yx(min_width: int, max_width: int, min_height: int, max_height: int) -> []:
     x = random.randrange(min_width, max_width)
     y = random.randrange(min_height, max_height)
     return [y, x]

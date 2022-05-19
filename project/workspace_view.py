@@ -16,9 +16,9 @@ class WorkspaceView:
 
     def __style_current_background(self) -> None:
         tk_image = ImageTk.PhotoImage(self.__current_image)
-        self.__background.configure(image=tk_image)  # update image of label
+        self.__background.configure(image=tk_image)
         self.__background.image = tk_image  # set image to draw (garbage collection reasons)
-        self.__background.pack(side="bottom", fill="both", expand=YES)  # packing the label to gid layout
+        self.__background.pack(side=BOTTOM, fill=BOTH, expand=YES)
 
     def set_click_callback(self, action_ref) -> None:
         self.__background.bind("<Button-1>", action_ref)
