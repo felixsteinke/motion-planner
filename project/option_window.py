@@ -2,7 +2,7 @@ from tkinter import *  # graphics Lib (not good to use)
 from utils import list_resource_files
 
 
-class OptionFrame:
+class OptionWindow:
     def __init__(self):
         selected_options = self.__open_popup()
         self.robot_name = selected_options[0]

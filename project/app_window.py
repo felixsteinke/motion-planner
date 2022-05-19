@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter.ttk import Notebook
 
 
-class AppFrame:
+class AppWindow:
     def __init__(self):
         self.root = self.__configure_root()
         self.__canvas = self.__open_canvas_frame()
