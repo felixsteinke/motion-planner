@@ -6,7 +6,7 @@ from dijkstar import Graph, find_path
 
 from collisionspace import Collisionspace
 from configspace_view import ConfigspaceView
-from utils import open_greyscale_bmp
+from utils import open_greyscale_bmp, GREYSCALE_BLACK
 
 
 class Configspace:  # shows the way of the robot the algorithm
@@ -21,10 +21,14 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__init_config_xy = []  # position of the start Image
         self.__goal_config_xy = []  # position of the goal Image
 
-        self.__collision_array = collisionspace.collision_array
-        self.__edge_graph = Graph()
+        self.__collision_array_yx = collisionspace.collision_array
 
+        self.edge_graph = Graph()
         self.solution_path = []  # array of Waypoints
+
+    def __add_bidirectional_edge(self, node_index1, node_index2, distance):
+        self.edge_graph.add_edge(node_index1, node_index2, distance)
+        self.edge_graph.add_edge(node_index2, node_index1, distance)
 
     def __draw_configuration_state(self):
         self.__view.reset()
@@ -37,7 +41,7 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__init_config_xy = []
         self.__goal_config_xy = []
         self.solution_path = []
-        self.__edge_graph = Graph()
+        self.edge_graph = Graph()
         self.__view.reset()
 
     def set_init_config(self, x, y):
@@ -49,32 +53,41 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__draw_configuration_state()
 
     def execute_SPRM_algorithm(self) -> None:
-        self.__edge_graph.add_node(0)
-        self.__edge_graph.add_node(1)
-        points_list = [(self.__init_config_xy[1], self.__init_config_xy[0]),
-                       (self.__goal_config_xy[1], self.__goal_config_xy[0])]
-        points = 1000
-        for i in range(2, points + 2):
-            found_flag = True
-            while found_flag:
-                new_point = random_point_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
-                if self.__collision_array[new_point[0]][new_point[1]] > 1:
-                    self.__edge_graph.add_node(i)
-                    points_list.append(new_point)
-                    found_flag = False
-        for i in points_list:
+        self.solution_path = []
+        self.edge_graph = Graph()
+        distance_r = 80
+        point_samples_n = 1000
+        # add configuration to vertex structure
+        self.edge_graph.add_node(0)
+        self.edge_graph.add_node(1)
+        vertex_list_yx = [
+            (self.__init_config_xy[1], self.__init_config_xy[0]),
+            (self.__goal_config_xy[1], self.__goal_config_xy[0])]
+
+        # calculate n free samples
+        for i in range(2, point_samples_n + 2):
+            while True:
+                free_sample_yx = random_point_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
+                if self.__collision_array_yx[free_sample_yx[0]][free_sample_yx[1]] > 1:
+                    self.edge_graph.add_node(i)
+                    vertex_list_yx.append(free_sample_yx)
+                    break
+
+        for point_index_tuple in tuples_under_distance(self.__collision_array_yx, vertex_list_yx, distance_r):
+            self.__add_bidirectional_edge(point_index_tuple[0],
+                                          point_index_tuple[1],
+                                          round(calc_distance(
+                                              vertex_list_yx[point_index_tuple[0]],
+                                              vertex_list_yx[point_index_tuple[1]])))
+            self.__view.draw_line_yx(vertex_list_yx[point_index_tuple[0]],
+                                     vertex_list_yx[point_index_tuple[1]],
+                                     'orange')
+        path = find_path(self.edge_graph, 0, 1)
+
+        # draw solution
+        for i in vertex_list_yx:
             self.__view.draw_point(i[1], i[0], 'blue')
-        for point_tuple in tuples_under_distance(self.__collision_array, points_list, 80):
-            self.__edge_graph.add_edge(point_tuple[0], point_tuple[1],
-                                       round(calc_distance(points_list[point_tuple[0]], points_list[point_tuple[1]])))
-            self.__edge_graph.add_edge(point_tuple[1], point_tuple[0],
-                                       round(calc_distance(points_list[point_tuple[1]], points_list[point_tuple[0]])))
-            self.__view.draw_line(points_list[point_tuple[0]], points_list[point_tuple[1]], 'yellow')
-        path = find_path(self.__edge_graph, 0, 1)
-        last_point = points_list[0]
-        self.__view.draw_path(path.nodes)
-        self.__view.draw_point(points_list[0][1], points_list[0][0], 'red')
-        self.__view.draw_point(points_list[1][1], points_list[1][0], 'green')
+        self.__view.draw_path(path, vertex_list_yx)
 
 
 def random_point_yx(min_width: int, max_width: int, min_height: int, max_height: int) -> []:
@@ -84,31 +97,32 @@ def random_point_yx(min_width: int, max_width: int, min_height: int, max_height:
 
 
 def calc_distance(point_1yx, point_2yx) -> float:
-    return ((point_1yx[0] - point_2yx[0]) ** 2 + (point_1yx[1] - point_2yx[1]) ** 2) ** 0.5
+    return ((point_1yx[0] - point_2yx[0]) ** 2 +
+            (point_1yx[1] - point_2yx[1]) ** 2) ** 0.5
 
 
-def tuples_under_distance(collision_array, points: [], distance) -> []:
-    indices_under_distance = []
-    for point_index in range(len(points) - 1):
-        for next_point_index in range(point_index + 1, len(points)):
-            if calc_distance(points[point_index], points[next_point_index]) < distance:
-                indices_under_distance.append([point_index, next_point_index])
+def tuples_under_distance(collision_array_yx, points_yx: [], distance) -> []:
+    points_neighbour_tuples = []
+    for point_index in range(len(points_yx) - 1):
+        for next_point_index in range(point_index + 1, len(points_yx)):
+            if calc_distance(points_yx[point_index], points_yx[next_point_index]) < distance:
+                points_neighbour_tuples.append([point_index, next_point_index])
     with Pool(4) as p:
-        collision_free = p.starmap(
-            check_path_collision_free,
-            zip(repeat(collision_array), repeat(points), indices_under_distance))
-    return filter(None, collision_free)
+        valid_edge = p.starmap(
+            edge_without_collision,
+            zip(repeat(collision_array_yx), repeat(points_yx), points_neighbour_tuples))
+    return filter(None, valid_edge)
 
 
-def check_path_collision_free(collision_array, points: [], index_tuple: []):
-    start = points[index_tuple[0]]
-    goal = points[index_tuple[1]]
-    step_range = round(calc_distance(start, goal))
+def edge_without_collision(collision_array_yx, points_yx: [], points_index_tuple: []):
+    start_yx = points_yx[points_index_tuple[0]]
+    goal_yx = points_yx[points_index_tuple[1]]
+    step_range = round(calc_distance(start_yx, goal_yx))
     for step in range(1, step_range):
-        point_between = calc_point_between_xy(start, goal, step, step_range)
-        if collision_array[point_between[1]][point_between[0]] == 0:
+        point_xy = calc_point_between_xy(start_yx, goal_yx, step, step_range)
+        if collision_array_yx[point_xy[1]][point_xy[0]] == GREYSCALE_BLACK:
             return None
-    return [index_tuple[0], index_tuple[1]]
+    return points_index_tuple
 
 
 def calc_point_between_xy(start_yx, goal_yx, step, step_range) -> []:

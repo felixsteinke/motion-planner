@@ -1,4 +1,5 @@
 from tkinter import *
+from typing import NamedTuple
 
 from PIL import ImageTk
 
@@ -30,10 +31,10 @@ class ConfigspaceView:
         bottom_left_xy = [offset_x, self.__collision_image.height - offset_y]
         bottom_right_xy = [self.__collision_image.width - offset_x, self.__collision_image.height - offset_y]
 
-        self.draw_line(top_left_xy, top_right_xy, 'red')
-        self.draw_line(top_right_xy, bottom_right_xy, 'red')
-        self.draw_line(bottom_right_xy, bottom_left_xy, 'red')
-        self.draw_line(bottom_left_xy, top_left_xy, 'red')
+        self.draw_line_xy(top_left_xy, top_right_xy, 'red')
+        self.draw_line_xy(top_right_xy, bottom_right_xy, 'red')
+        self.draw_line_xy(bottom_right_xy, bottom_left_xy, 'red')
+        self.draw_line_xy(bottom_left_xy, top_left_xy, 'red')
 
     def reset(self):
         tk_image = ImageTk.PhotoImage(self.__collision_image)
@@ -49,12 +50,20 @@ class ConfigspaceView:
                                   center_y + radius,
                                   fill=color)
 
-    def draw_path(self, points: []) -> None:
-        for i in range(1, len(points)):  # iterate over points from solution-path
-            start_point = points[i - 1]  # point for the start of the line at loop cycle i
-            goal_point = points[i]  # point for the end of the line at loop cycle i
-            self.draw_point(start_point[0], start_point[1], 'purple')
-            self.draw_line(start_point, goal_point, 'pink')
+    def draw_path(self, path, vertex_list_yx) -> None:
+        start_vertex_yx = vertex_list_yx[0]
+        self.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'green')
+        for vertex_index in path.nodes:
+            if vertex_index == 0:
+                continue
+            next_vertex_yx = vertex_list_yx[vertex_index]
+            self.draw_point(next_vertex_yx[1], next_vertex_yx[0], 'purple')
+            self.draw_line_yx(start_vertex_yx, next_vertex_yx, 'red')
+            start_vertex_yx = next_vertex_yx
+        self.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'red')
 
-    def draw_line(self, start_point: [], goal_point: [], color) -> None:
+    def draw_line_xy(self, start_point: [], goal_point: [], color) -> None:
         self.__canvas.create_line(start_point[0], start_point[1], goal_point[0], goal_point[1], fill=color)
+
+    def draw_line_yx(self, start_point: [], goal_point: [], color) -> None:
+        self.__canvas.create_line(start_point[1], start_point[0], goal_point[1], goal_point[0], fill=color)
