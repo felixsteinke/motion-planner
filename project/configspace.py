@@ -12,20 +12,19 @@ from utils import open_greyscale_bmp
 class Configspace:  # shows the way of the robot the algorithm
     def __init__(self, app_page, robot_name: str, collisionspace: Collisionspace):
         robot_bmp = open_greyscale_bmp(robot_name)
-        real_max_width = collisionspace.collision_image.width
-        real_max_height = collisionspace.collision_image.height
-        self.min_width = robot_bmp.width
-        self.max_width = real_max_width - robot_bmp.width
-        self.min_height = robot_bmp.height
-        self.max_height = real_max_height - robot_bmp.height
-        self.collision_array = collisionspace.collision_array
         self.__view = ConfigspaceView(app_page, robot_bmp, collisionspace.collision_image)
+        self.__min_x = robot_bmp.width
+        self.__max_x = collisionspace.collision_image.width - robot_bmp.width
+        self.__min_y = robot_bmp.height
+        self.__max_y = collisionspace.collision_image.height - robot_bmp.height
 
         self.__init_config_xy = []  # position of the start Image
         self.__goal_config_xy = []  # position of the goal Image
 
+        self.__collision_array = collisionspace.collision_array
+        self.__edge_graph = Graph()
+
         self.solution_path = []  # array of Waypoints
-        self.graph = Graph()
 
     def __draw_configuration_state(self):
         self.__view.reset()
@@ -38,7 +37,7 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__init_config_xy = []
         self.__goal_config_xy = []
         self.solution_path = []
-        self.graph = Graph()
+        self.__edge_graph = Graph()
         self.__view.reset()
 
     def set_init_config(self, x, y):
@@ -50,28 +49,28 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__draw_configuration_state()
 
     def execute_SPRM_algorithm(self) -> None:
-        self.graph.add_node(0)
-        self.graph.add_node(1)
+        self.__edge_graph.add_node(0)
+        self.__edge_graph.add_node(1)
         points_list = [(self.__init_config_xy[1], self.__init_config_xy[0]),
                        (self.__goal_config_xy[1], self.__goal_config_xy[0])]
         points = 1000
         for i in range(2, points + 2):
             found_flag = True
             while found_flag:
-                new_point = random_point_yx(self.min_width, self.max_width, self.min_height, self.max_height)
-                if self.collision_array[new_point[0]][new_point[1]] > 1:
-                    self.graph.add_node(i)
+                new_point = random_point_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
+                if self.__collision_array[new_point[0]][new_point[1]] > 1:
+                    self.__edge_graph.add_node(i)
                     points_list.append(new_point)
                     found_flag = False
         for i in points_list:
             self.__view.draw_point(i[1], i[0], 'blue')
-        for point_tuple in tuples_under_distance(self.collision_array, points_list, 80):
-            self.graph.add_edge(point_tuple[0], point_tuple[1],
-                                round(calc_distance(points_list[point_tuple[0]], points_list[point_tuple[1]])))
-            self.graph.add_edge(point_tuple[1], point_tuple[0],
-                                round(calc_distance(points_list[point_tuple[1]], points_list[point_tuple[0]])))
+        for point_tuple in tuples_under_distance(self.__collision_array, points_list, 80):
+            self.__edge_graph.add_edge(point_tuple[0], point_tuple[1],
+                                       round(calc_distance(points_list[point_tuple[0]], points_list[point_tuple[1]])))
+            self.__edge_graph.add_edge(point_tuple[1], point_tuple[0],
+                                       round(calc_distance(points_list[point_tuple[1]], points_list[point_tuple[0]])))
             self.__view.draw_line(points_list[point_tuple[0]], points_list[point_tuple[1]], 'yellow')
-        path = find_path(self.graph, 0, 1)
+        path = find_path(self.__edge_graph, 0, 1)
         last_point = points_list[0]
         self.__view.draw_path(path.nodes)
         self.__view.draw_point(points_list[0][1], points_list[0][0], 'red')
