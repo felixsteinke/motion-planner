@@ -13,10 +13,10 @@ class Configspace:  # shows the way of the robot the algorithm
     def __init__(self, app_page, robot_name: str, collisionspace: Collisionspace):
         robot_bmp = open_greyscale_bmp(robot_name)
         self.__view = ConfigspaceView(app_page, robot_bmp, collisionspace.collision_image)
-        self.__min_x = robot_bmp.width
-        self.__max_x = collisionspace.collision_image.width - robot_bmp.width
-        self.__min_y = robot_bmp.height
-        self.__max_y = collisionspace.collision_image.height - robot_bmp.height
+        self.__min_x = round(robot_bmp.width/2)
+        self.__max_x = collisionspace.collision_image.width - round(robot_bmp.width/2)
+        self.__min_y = round(robot_bmp.height/2)
+        self.__max_y = collisionspace.collision_image.height - round(robot_bmp.height/2)
 
         self.__init_config_xy = []  # position of the start Image
         self.__goal_config_xy = []  # position of the goal Image
@@ -47,7 +47,7 @@ class Configspace:  # shows the way of the robot the algorithm
             next_vertex_yx = vertex_list_yx[vertex_index]
             self.__view.draw_point(next_vertex_yx[1], next_vertex_yx[0], 'purple')
             self.__view.draw_line_yx(start_vertex_yx, next_vertex_yx, 'red')
-            self.solution_path_yx.append(next_vertex_yx)
+            self.solution_path_yx.extend(calc_all_points_between_xy(start_vertex_yx, next_vertex_yx))
             start_vertex_yx = next_vertex_yx
         self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'red')
 
@@ -69,8 +69,8 @@ class Configspace:  # shows the way of the robot the algorithm
     def execute_SPRM_algorithm(self) -> None:
         self.solution_path_yx = []
         self.edge_graph = Graph()
-        distance_r = 80
-        point_samples_n = 1000
+        distance_r = 90
+        point_samples_n = round(self.__collision_array_yx.shape[0] * self.__collision_array_yx.shape[1] / 800)
         # add configuration to vertex structure
         self.edge_graph.add_node(0)
         self.edge_graph.add_node(1)
@@ -96,11 +96,10 @@ class Configspace:  # shows the way of the robot the algorithm
             self.__view.draw_line_yx(vertex_list_yx[point_index_tuple[0]],
                                      vertex_list_yx[point_index_tuple[1]],
                                      'orange')
-        path = find_path(self.edge_graph, 0, 1)
-
-        # draw solution
         for i in vertex_list_yx:
             self.__view.draw_point(i[1], i[0], 'blue')
+        path = find_path(self.edge_graph, 0, 1)
+        # draw solution
         self.__convert_solution_path(path, vertex_list_yx)
 
 
@@ -145,3 +144,11 @@ def calc_point_between_xy(start_yx, goal_yx, step, step_range) -> []:
     new_x = start_yx[1] + delta_x
     new_y = start_yx[0] + delta_y
     return [new_x, new_y]
+
+
+def calc_all_points_between_xy(start_yx, goal_yx):
+    result = []
+    step_range = round(calc_distance(start_yx, goal_yx))
+    for step in range(1, step_range):
+        result.append(calc_point_between_xy([start_yx[1], start_yx[0]], [goal_yx[1], goal_yx[0]], step, step_range))
+    return result
