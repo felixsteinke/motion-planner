@@ -46,6 +46,7 @@ class AppWindow:
 
         canvas.configure(xscrollcommand=x_scrollbar.set)
         canvas.configure(yscrollcommand=y_scrollbar.set)
+        canvas.configure()
         canvas.bind("<Configure>", lambda e: canvas.config(scrollregion=canvas.bbox(ALL)))
         canvas_frame = Frame(canvas)
         canvas.create_window((0, 0), window=canvas_frame, anchor="nw")

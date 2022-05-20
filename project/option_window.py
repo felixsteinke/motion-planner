@@ -1,9 +1,12 @@
+import ctypes
 from tkinter import *  # graphics Lib (not good to use)
 from utils import list_resource_files
 
 
 class OptionWindow:
-    def __init__(self):
+    def __init__(self, root_id):
+        self.root_id = root_id
+        self.set_to_foreground = ctypes.windll.user32.SetForegroundWindow
         selected_options = self.__open_popup()
         self.robot_name = selected_options[0]
         self.room_name = selected_options[1]
@@ -18,12 +21,17 @@ class OptionWindow:
 
         robot_selector = self.__configure_selector(window, row=1, options=list_resource_files('robot_', '.bmp'))
         room_selector = self.__configure_selector(window, row=2, options=list_resource_files('room_', '.bmp'))
-        Button(window, text="Okay", command=window.destroy).grid(row=3, column=0, sticky='nsew')
+        Button(window, text="Okay", command=lambda: [window.destroy(), self.close(window)]) \
+            .grid(row=3, column=0, sticky='nsew')
 
         window.geometry(self.__frame_geometry(window.winfo_screenwidth(), window.winfo_screenheight()))
         window.attributes('-topmost', True)
         window.wait_window(window)
         return [robot_selector.get(), room_selector.get()]
+
+    def close(self, window: Toplevel):
+        self.set_to_foreground(self.root_id)
+        window.destroy()
 
     @staticmethod
     def __configure_selector(window: Toplevel, row: int, options: []) -> StringVar:
