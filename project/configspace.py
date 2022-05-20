@@ -156,7 +156,7 @@ def nearest_vertex_yx(vertex_list_yx, rand_vertex) -> int:
 def get_vertex_in_range(start_vertex_yx, end_vertex_yx, max_range) -> []:
     if calc_distance(start_vertex_yx, end_vertex_yx) <= max_range:
         return end_vertex_yx
-    return []  # TODO vertex in range
+    return calc_point_between(start_vertex_yx, end_vertex_yx, 1, max_range)
 
 
 def max_time_elapsed(start_time, max_time) -> bool:
@@ -197,23 +197,23 @@ def edge_without_collision(collision_array_yx, points_yx: [], points_index_tuple
     goal_yx = points_yx[points_index_tuple[1]]
     step_range = round(calc_distance(start_yx, goal_yx))
     for step in range(1, step_range):
-        point_xy = calc_point_between_xy(start_yx, goal_yx, step, step_range)
-        if collision_array_yx[point_xy[1]][point_xy[0]] == GREYSCALE_BLACK:
+        point_yx = calc_point_between(start_yx, goal_yx, step, step_range)
+        if collision_array_yx[point_yx] == GREYSCALE_BLACK:
             return None
     return points_index_tuple
 
 
-def calc_point_between_xy(start_yx, goal_yx, step, step_range) -> []:
+def calc_point_between(start_yx, goal_yx, step, step_range) -> []:
     delta_x = round(step * float(goal_yx[1] - start_yx[1]) / float(step_range))
     delta_y = round(step * float(goal_yx[0] - start_yx[0]) / float(step_range))
     new_x = start_yx[1] + delta_x
     new_y = start_yx[0] + delta_y
-    return [new_x, new_y]
+    return [new_y, new_x]
 
 
 def calc_all_points_between_xy(start_yx, goal_yx):
     result = []
     step_range = round(calc_distance(start_yx, goal_yx))
     for step in range(1, step_range):
-        result.append(calc_point_between_xy([start_yx[1], start_yx[0]], [goal_yx[1], goal_yx[0]], step, step_range))
+        result.append(calc_point_between(start_yx, goal_yx, step, step_range))
     return result
