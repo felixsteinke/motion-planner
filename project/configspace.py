@@ -15,10 +15,10 @@ class Configspace:  # shows the way of the robot the algorithm
     def __init__(self, app_page, robot_name: str, collisionspace: Collisionspace):
         robot_bmp = open_greyscale_bmp(robot_name)
         self.__view = ConfigspaceView(app_page, robot_bmp, collisionspace.collision_image)
-        self.__min_x = round(robot_bmp.width/2)
-        self.__max_x = collisionspace.collision_image.width - round(robot_bmp.width/2)
-        self.__min_y = round(robot_bmp.height/2)
-        self.__max_y = collisionspace.collision_image.height - round(robot_bmp.height/2)
+        self.__min_x = round(robot_bmp.width / 2)
+        self.__max_x = collisionspace.collision_image.width - round(robot_bmp.width / 2)
+        self.__min_y = round(robot_bmp.height / 2)
+        self.__max_y = collisionspace.collision_image.height - round(robot_bmp.height / 2)
 
         self.__init_config_yx = []  # position of the start Image
         self.__goal_config_yx = []  # position of the goal Image

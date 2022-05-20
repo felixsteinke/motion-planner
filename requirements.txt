@@ -1,5 +1,5 @@
 numpy==1.22.3
-Pillow==9.1.0
+Pillow==9.1.1
 tqdm~=4.64.0
 Dijkstar~=2.6.0
 scipy~=1.8.1
