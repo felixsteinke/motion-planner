@@ -1,8 +1,10 @@
 import random
+import time
 from itertools import repeat
 from multiprocessing import Pool
 
 from dijkstar import Graph, find_path
+from scipy.spatial import KDTree
 
 from collisionspace import Collisionspace
 from configspace_view import ConfigspaceView
@@ -18,8 +20,8 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__min_y = round(robot_bmp.height/2)
         self.__max_y = collisionspace.collision_image.height - round(robot_bmp.height/2)
 
-        self.__init_config_xy = []  # position of the start Image
-        self.__goal_config_xy = []  # position of the goal Image
+        self.__init_config_yx = []  # position of the start Image
+        self.__goal_config_yx = []  # position of the goal Image
 
         self.__collision_array_yx = collisionspace.collision_array
 
@@ -32,12 +34,14 @@ class Configspace:  # shows the way of the robot the algorithm
 
     def __draw_configuration_state(self):
         self.__view.reset()
-        if self.__init_config_xy:
-            self.__view.draw_point(self.__init_config_xy[0], self.__init_config_xy[1], 'green')
-        if self.__goal_config_xy:
-            self.__view.draw_point(self.__goal_config_xy[0], self.__goal_config_xy[1], 'red')
+        if self.__init_config_yx:
+            self.__view.draw_point(self.__init_config_yx[1], self.__init_config_yx[0], 'green')
+        if self.__goal_config_yx:
+            self.__view.draw_point(self.__goal_config_yx[1], self.__goal_config_yx[0], 'red')
 
-    def __convert_solution_path(self, path, vertex_list_yx):
+    def __convert_solution_path(self, path, vertex_list_yx) -> None:
+        if not path:
+            return
         start_vertex_yx = vertex_list_yx[0]
         self.solution_path_yx.append(start_vertex_yx)
         self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'green')
@@ -57,33 +61,31 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__view.reset()
 
     def reset(self) -> None:
-        self.__init_config_xy = []
-        self.__goal_config_xy = []
+        self.__init_config_yx = []
+        self.__goal_config_yx = []
         self.__reset_solution()
         self.__view.reset()
 
     def set_init_config(self, x, y):
-        self.__init_config_xy = [x, y]
+        self.__init_config_yx = [y, x]
         self.__draw_configuration_state()
 
     def set_goal_config(self, x, y):
-        self.__goal_config_xy = [x, y]
+        self.__goal_config_yx = [y, x]
         self.__draw_configuration_state()
 
     def execute_SPRM_algorithm(self) -> None:
         # input parameter
         distance_r = 90
         point_samples_n = round(self.__collision_array_yx.shape[0] * self.__collision_array_yx.shape[1] / 800)
-        print('Executing sPRM: c_init[x={init[0]},y={init[1]}], c_goal[x={goal[0]},y={goal[1]}], r={r}, n={n}'
-              .format(init=self.__init_config_xy, goal=self.__goal_config_xy, r=distance_r, n=point_samples_n))
+        print('Executing sPRM: c_init[x={init[1]},y={init[0]}], c_goal[x={goal[1]},y={goal[0]}], r={r}, n={n}'
+              .format(init=self.__init_config_yx, goal=self.__goal_config_yx, r=distance_r, n=point_samples_n))
         # reset data
         self.__reset_solution()
         # add configuration to vertex structure
         self.edge_graph.add_node(0)
         self.edge_graph.add_node(1)
-        vertex_list_yx = [
-            (self.__init_config_xy[1], self.__init_config_xy[0]),
-            (self.__goal_config_xy[1], self.__goal_config_xy[0])]
+        vertex_list_yx = [self.__init_config_yx, self.__goal_config_yx]
 
         # calculate n free samples
         for i in range(2, point_samples_n + 2):
@@ -111,33 +113,55 @@ class Configspace:  # shows the way of the robot the algorithm
 
     def execute_RRT_algorithm(self) -> None:
         max_range = 250
-        max_time = 10  # 10 seconds
-        print('Executing RRT: c_init[x={init[0]},y={init[1]}], c_goal[x={goal[0]},y={goal[1]}], range={r}, time={n}sec'
-              .format(init=self.__init_config_xy, goal=self.__goal_config_xy, r=max_range, n=max_time))
+        max_time = 10000  # 10 seconds
+        print('Executing RRT: c_init[x={init[1]},y={init[0]}], c_goal[x={goal[1]},y={goal[0]}], range={r}, time={n}sec'
+              .format(init=self.__init_config_yx, goal=self.__goal_config_yx, r=max_range, n=max_time))
         self.__reset_solution()
-
-        vertex_list_yx = [(self.__init_config_xy[1], self.__init_config_xy[0]),
-                          (self.__goal_config_xy[1], self.__goal_config_xy[0])]
+        vertex_list_yx = [self.__init_config_yx, self.__goal_config_yx]
         path = None
-        while True: # TODO max time not elapsed
+        start_time = time.time()
+        while not max_time_elapsed(start_time, max_time):
             rand_vertex = random_vertex_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
             if not sample_is_valid(self.__collision_array_yx, rand_vertex):
                 continue
-            near_vertex = None  # TODO nearest_vertex_yx(vertex_list_yx, rand_vertex) -> return vertex
-            new_vertex = None  # TODO get_vertex_in_range(near_vertex, rand_vertex, max_range) -> return new vertex or
+            near_vertex_index = nearest_vertex_yx(vertex_list_yx, rand_vertex)
+            new_vertex = get_vertex_in_range(vertex_list_yx[near_vertex_index], rand_vertex, max_range)
             # rand_vertex if in range
-            if True:  # TODO edge (near_vertex, new_vertex) is valid
-                vertex_index = len(vertex_list_yx)
-                self.edge_graph.add_node(vertex_index)
+            new_vertex_index = len(vertex_list_yx)
+            if edge_without_collision(self.__collision_array_yx,
+                                      [vertex_list_yx[near_vertex_index], new_vertex],
+                                      (0, 1)):
+                self.edge_graph.add_node(new_vertex_index)
                 vertex_list_yx.append(new_vertex)
-                # TODO self.__add_bidirectional_edge(...) with vertex_index and vertex_index_of_near
-                if True:  # TODO new_vertex in range of goal and valid
+                self.__add_bidirectional_edge(new_vertex_index, near_vertex_index, round(calc_distance(
+                    vertex_list_yx[new_vertex_index],
+                    vertex_list_yx[near_vertex_index])))
+                if (calc_distance(new_vertex, self.__goal_config_yx) < max_range) \
+                        and edge_without_collision(self.__collision_array_yx,
+                                                   [self.__goal_config_yx, new_vertex], (0, 1)):
                     path = find_path(self.edge_graph, 0, 1)
-
         # draw solution
         for i in vertex_list_yx:
             self.__view.draw_point(i[1], i[0], 'blue')
         self.__convert_solution_path(path, vertex_list_yx)
+
+
+def nearest_vertex_yx(vertex_list_yx, rand_vertex) -> int:
+    kdt_vertex_list = vertex_list_yx
+    kdt = KDTree(kdt_vertex_list)
+    result = kdt.query(rand_vertex)
+    return result  # TODO
+
+
+def get_vertex_in_range(start_vertex_yx, end_vertex_yx, max_range) -> []:
+    if calc_distance(start_vertex_yx, end_vertex_yx) <= max_range:
+        return end_vertex_yx
+    return []  # TODO vertex in range
+
+
+def max_time_elapsed(start_time, max_time) -> bool:
+    elapsed_time = time.time() - start_time
+    return elapsed_time > max_time
 
 
 def sample_is_valid(collision_array_yx, vertex_yx: []):
@@ -150,9 +174,9 @@ def random_vertex_yx(min_width: int, max_width: int, min_height: int, max_height
     return [y, x]
 
 
-def calc_distance(point_1yx, point_2yx) -> float:
-    return ((point_1yx[0] - point_2yx[0]) ** 2 +
-            (point_1yx[1] - point_2yx[1]) ** 2) ** 0.5
+def calc_distance(point1, point2) -> float:
+    return ((point1[0] - point2[0]) ** 2 +
+            (point1[1] - point2[1]) ** 2) ** 0.5
 
 
 def tuples_under_distance(collision_array_yx, points_yx: [], distance) -> []:
