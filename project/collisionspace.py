@@ -13,8 +13,6 @@ class Collisionspace:
         self.__robot_image = open_image(robot_name, 'bmp')
         self.__room_image = open_greyscale_bmp(room_name)
 
-        self.robot_array = robot_array_black_white(robot_name)  # TODO unused
-
         current_hash_digest = hashlib.md5(self.__robot_image.tobytes() + self.__room_image.tobytes()).hexdigest()
         if collision_image_exists(current_hash_digest):
             self.collision_image = open_collision_image(current_hash_digest)
