@@ -48,6 +48,11 @@ def main():  # Method Declaration the indentation works as '{'
         slider['from_'] = 0
         slider['to_'] = len(configspace.solution_path_yx) - 1
 
+    def execute_rrt():
+        configspace.execute_RRT_algorithm()
+        slider['from_'] = 0
+        slider['to_'] = len(configspace.solution_path_yx) - 1
+
     def reset_action():
         workspace.reset()
         configspace.reset()
@@ -62,8 +67,9 @@ def main():  # Method Declaration the indentation works as '{'
     app_window.add_button('Set Init', 1, set_init_action)
     app_window.add_button('Set Goal', 2, set_goal_action)
     app_window.add_button('Execute sPRM', 3, execute_sprm)
-    app_window.add_button('Reset', 4, reset_action)
-    app_window.add_button('Restart', 5, restart_action)
+    app_window.add_button('Execute RRT', 4, execute_rrt)
+    app_window.add_button('Reset', 5, reset_action)
+    app_window.add_button('Restart', 6, restart_action)
 
     # === APP THREAD ===================================================================================================
 

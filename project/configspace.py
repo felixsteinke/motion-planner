@@ -6,7 +6,7 @@ from dijkstar import Graph, find_path
 
 from collisionspace import Collisionspace
 from configspace_view import ConfigspaceView
-from utils import open_greyscale_bmp, GREYSCALE_BLACK
+from utils import open_greyscale_bmp, GREYSCALE_BLACK, greyscale_is_not_black
 
 
 class Configspace:  # shows the way of the robot the algorithm
@@ -51,11 +51,14 @@ class Configspace:  # shows the way of the robot the algorithm
             start_vertex_yx = next_vertex_yx
         self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'red')
 
+    def __reset_solution(self):
+        self.solution_path_yx = []
+        self.edge_graph = Graph()
+
     def reset(self) -> None:
         self.__init_config_xy = []
         self.__goal_config_xy = []
-        self.solution_path_yx = []
-        self.edge_graph = Graph()
+        self.__reset_solution()
         self.__view.reset()
 
     def set_init_config(self, x, y):
@@ -67,10 +70,13 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__draw_configuration_state()
 
     def execute_SPRM_algorithm(self) -> None:
-        self.solution_path_yx = []
-        self.edge_graph = Graph()
+        # input parameter
         distance_r = 90
         point_samples_n = round(self.__collision_array_yx.shape[0] * self.__collision_array_yx.shape[1] / 800)
+        print('Executing sPRM: c_init[x={init[0]},y={init[1]}], c_goal[x={goal[0]},y={goal[1]}], r={r}, n={n}'
+              .format(init=self.__init_config_xy, goal=self.__goal_config_xy, r=distance_r, n=point_samples_n))
+        # reset data
+        self.__reset_solution()
         # add configuration to vertex structure
         self.edge_graph.add_node(0)
         self.edge_graph.add_node(1)
@@ -81,8 +87,8 @@ class Configspace:  # shows the way of the robot the algorithm
         # calculate n free samples
         for i in range(2, point_samples_n + 2):
             while True:
-                free_sample_yx = random_point_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
-                if self.__collision_array_yx[free_sample_yx[0]][free_sample_yx[1]] > 1:
+                free_sample_yx = random_vertex_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
+                if sample_is_valid(self.__collision_array_yx, free_sample_yx):
                     self.edge_graph.add_node(i)
                     vertex_list_yx.append(free_sample_yx)
                     break
@@ -102,8 +108,29 @@ class Configspace:  # shows the way of the robot the algorithm
         # draw solution
         self.__convert_solution_path(path, vertex_list_yx)
 
+    def execute_RRT_algorithm(self) -> None:
+        max_range = 250
+        max_time = 10  # 10 seconds
+        print('Executing RRT: c_init[x={init[0]},y={init[1]}], c_goal[x={goal[0]},y={goal[1]}], range={r}, time={n}sec'
+              .format(init=self.__init_config_xy, goal=self.__goal_config_xy, r=max_range, n=max_time))
+        self.__reset_solution()
+        self.edge_graph.add_node(0)
+        self.edge_graph.add_node(1)
 
-def random_point_yx(min_width: int, max_width: int, min_height: int, max_height: int) -> []:
+        vertex_list_yx = [
+            (self.__init_config_xy[1], self.__init_config_xy[0]),
+            (self.__goal_config_xy[1], self.__goal_config_xy[0])]
+        while True:
+            free_sample_yx = random_vertex_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
+            if not sample_is_valid(self.__collision_array_yx, free_sample_yx):
+                continue
+
+
+def sample_is_valid(collision_array_yx, vertex_yx: []):
+    return greyscale_is_not_black(collision_array_yx[vertex_yx[0]][vertex_yx[1]])
+
+
+def random_vertex_yx(min_width: int, max_width: int, min_height: int, max_height: int) -> []:
     x = random.randrange(min_width, max_width)
     y = random.randrange(min_height, max_height)
     return [y, x]
