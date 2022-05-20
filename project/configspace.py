@@ -147,10 +147,9 @@ class Configspace:  # shows the way of the robot the algorithm
 
 
 def nearest_vertex_yx(vertex_list_yx, rand_vertex) -> int:
-    kdt_vertex_list = vertex_list_yx
-    kdt = KDTree(kdt_vertex_list)
-    result = kdt.query(rand_vertex)
-    return result  # TODO
+    kd_tree = KDTree(vertex_list_yx)
+    result = kd_tree.query(rand_vertex)
+    return result[1]
 
 
 def get_vertex_in_range(start_vertex_yx, end_vertex_yx, max_range) -> []:
