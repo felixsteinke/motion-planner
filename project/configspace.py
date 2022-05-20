@@ -54,6 +54,7 @@ class Configspace:  # shows the way of the robot the algorithm
     def __reset_solution(self):
         self.solution_path_yx = []
         self.edge_graph = Graph()
+        self.__view.reset()
 
     def reset(self) -> None:
         self.__init_config_xy = []
@@ -114,16 +115,29 @@ class Configspace:  # shows the way of the robot the algorithm
         print('Executing RRT: c_init[x={init[0]},y={init[1]}], c_goal[x={goal[0]},y={goal[1]}], range={r}, time={n}sec'
               .format(init=self.__init_config_xy, goal=self.__goal_config_xy, r=max_range, n=max_time))
         self.__reset_solution()
-        self.edge_graph.add_node(0)
-        self.edge_graph.add_node(1)
 
-        vertex_list_yx = [
-            (self.__init_config_xy[1], self.__init_config_xy[0]),
-            (self.__goal_config_xy[1], self.__goal_config_xy[0])]
-        while True:
-            free_sample_yx = random_vertex_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
-            if not sample_is_valid(self.__collision_array_yx, free_sample_yx):
+        vertex_list_yx = [(self.__init_config_xy[1], self.__init_config_xy[0]),
+                          (self.__goal_config_xy[1], self.__goal_config_xy[0])]
+        path = None
+        while True: # TODO max time not elapsed
+            rand_vertex = random_vertex_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
+            if not sample_is_valid(self.__collision_array_yx, rand_vertex):
                 continue
+            near_vertex = None  # TODO nearest_vertex_yx(vertex_list_yx, rand_vertex) -> return vertex
+            new_vertex = None  # TODO get_vertex_in_range(near_vertex, rand_vertex, max_range) -> return new vertex or
+            # rand_vertex if in range
+            if True:  # TODO edge (near_vertex, new_vertex) is valid
+                vertex_index = len(vertex_list_yx)
+                self.edge_graph.add_node(vertex_index)
+                vertex_list_yx.append(new_vertex)
+                # TODO self.__add_bidirectional_edge(...) with vertex_index and vertex_index_of_near
+                if True:  # TODO new_vertex in range of goal and valid
+                    path = find_path(self.edge_graph, 0, 1)
+
+        # draw solution
+        for i in vertex_list_yx:
+            self.__view.draw_point(i[1], i[0], 'blue')
+        self.__convert_solution_path(path, vertex_list_yx)
 
 
 def sample_is_valid(collision_array_yx, vertex_yx: []):
