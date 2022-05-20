@@ -24,13 +24,29 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__goal_config_yx = []  # position of the goal Image
 
         self.__collision_array_yx = collisionspace.collision_array
+        self.__edge_graph = Graph()
 
-        self.edge_graph = Graph()
-        self.solution_path_yx = []  # array of Waypoints
+        self.__algorithm_time = 0
+        self.__solution_path_length = 0
+        self.solution_pixel_yx = []  # array of Waypoints
 
-    def __add_bidirectional_edge(self, node_index1, node_index2, distance):
-        self.edge_graph.add_edge(node_index1, node_index2, distance)
-        self.edge_graph.add_edge(node_index2, node_index1, distance)
+    def __append_rrt_algorithm_edge(self, new_index: int, new_vertex: [], start_index: int, start_point: []):
+        self.__edge_graph.add_node(new_index)
+        # bidirectional edge
+        distance = round(calc_distance(new_vertex, start_point))
+        self.__edge_graph.add_edge(new_index, start_index, distance)
+        self.__edge_graph.add_edge(start_index, new_index, distance)
+        # draw on view
+        self.__view.draw_line_yx(new_vertex, start_point, 'orange')
+
+    def __append_sprm_algorithm_edge(self, index_tuple: [], vertex_list_yx: []):
+        vertex0 = vertex_list_yx[index_tuple[0]]
+        vertex1 = vertex_list_yx[index_tuple[1]]
+        # bidirectional edge
+        distance = round(calc_distance(vertex0, vertex1))
+        self.__edge_graph.add_edge(index_tuple[0], index_tuple[1], distance)
+        self.__edge_graph.add_edge(index_tuple[1], index_tuple[0], distance)
+        self.__view.draw_line_yx(vertex0, vertex1, 'orange')
 
     def __draw_configuration_state(self):
         self.__view.reset()
@@ -42,8 +58,9 @@ class Configspace:  # shows the way of the robot the algorithm
     def __convert_solution_path(self, path, vertex_list_yx) -> None:
         if not path:
             return
+        self.__solution_path_length = len(path)
         start_vertex_yx = vertex_list_yx[0]
-        self.solution_path_yx.append(start_vertex_yx)
+        self.solution_pixel_yx.append(start_vertex_yx)
         self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'green')
         for vertex_index in path.nodes:
             if vertex_index == 0:
@@ -51,13 +68,20 @@ class Configspace:  # shows the way of the robot the algorithm
             next_vertex_yx = vertex_list_yx[vertex_index]
             self.__view.draw_point(next_vertex_yx[1], next_vertex_yx[0], 'purple')
             self.__view.draw_line_yx(start_vertex_yx, next_vertex_yx, 'red')
-            self.solution_path_yx.extend(calc_all_points_between_xy(start_vertex_yx, next_vertex_yx))
+            self.solution_pixel_yx.extend(calc_all_points_between_xy(start_vertex_yx, next_vertex_yx))
             start_vertex_yx = next_vertex_yx
         self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'red')
+        self.__print_solution_summary()
+
+    def __print_solution_summary(self):
+        print("Solution Summary: Path Length = {} with Algorithm Time = {}"
+              .format(self.__solution_path_length, self.__algorithm_time))
 
     def __reset_solution(self):
-        self.solution_path_yx = []
-        self.edge_graph = Graph()
+        self.solution_pixel_yx = []
+        self.__edge_graph = Graph()
+        self.__algorithm_time = 0
+        self.__solution_path_length = 0
         self.__view.reset()
 
     def reset(self) -> None:
@@ -83,8 +107,8 @@ class Configspace:  # shows the way of the robot the algorithm
         # reset data
         self.__reset_solution()
         # add configuration to vertex structure
-        self.edge_graph.add_node(0)
-        self.edge_graph.add_node(1)
+        self.__edge_graph.add_node(0)
+        self.__edge_graph.add_node(1)
         vertex_list_yx = [self.__init_config_yx, self.__goal_config_yx]
 
         # calculate n free samples
@@ -92,22 +116,16 @@ class Configspace:  # shows the way of the robot the algorithm
             while True:
                 free_sample_yx = random_vertex_yx(self.__min_x, self.__max_x, self.__min_y, self.__max_y)
                 if sample_is_valid(self.__collision_array_yx, free_sample_yx):
-                    self.edge_graph.add_node(i)
+                    self.__edge_graph.add_node(i)
                     vertex_list_yx.append(free_sample_yx)
                     break
 
         for point_index_tuple in tuples_under_distance(self.__collision_array_yx, vertex_list_yx, distance_r):
-            self.__add_bidirectional_edge(point_index_tuple[0],
-                                          point_index_tuple[1],
-                                          round(calc_distance(
-                                              vertex_list_yx[point_index_tuple[0]],
-                                              vertex_list_yx[point_index_tuple[1]])))
-            self.__view.draw_line_yx(vertex_list_yx[point_index_tuple[0]],
-                                     vertex_list_yx[point_index_tuple[1]],
-                                     'orange')
+            self.__append_sprm_algorithm_edge(index_tuple=point_index_tuple, vertex_list_yx=vertex_list_yx)
+
         for i in vertex_list_yx:
             self.__view.draw_point(i[1], i[0], 'blue')
-        path = find_path(self.edge_graph, 0, 1)
+        path = find_path(self.__edge_graph, 0, 1)
         # draw solution
         self.__convert_solution_path(path, vertex_list_yx)
 
@@ -117,7 +135,7 @@ class Configspace:  # shows the way of the robot the algorithm
         print('Executing RRT: c_init[x={init[1]},y={init[0]}], c_goal[x={goal[1]},y={goal[0]}], range={r}, time={n}sec'
               .format(init=self.__init_config_yx, goal=self.__goal_config_yx, r=max_range, n=max_time))
         self.__reset_solution()
-        self.edge_graph.add_node(0)
+        self.__edge_graph.add_node(0)
         vertex_list_yx = [self.__init_config_yx]
         path = None
         start_time = time.time()
@@ -126,32 +144,28 @@ class Configspace:  # shows the way of the robot the algorithm
             if not sample_is_valid(self.__collision_array_yx, rand_vertex):
                 continue
             near_vertex_index = nearest_vertex_yx(vertex_list_yx, rand_vertex)
-            new_vertex = get_vertex_in_range(vertex_list_yx[near_vertex_index], rand_vertex, max_range)
-            # rand_vertex if in range
+            near_vertex = vertex_list_yx[near_vertex_index]
+            new_vertex = get_vertex_in_range(near_vertex, rand_vertex, max_range)
             new_vertex_index = len(vertex_list_yx)
-            if edge_without_collision(self.__collision_array_yx,
-                                      [vertex_list_yx[near_vertex_index], new_vertex],
-                                      (0, 1)):
-                self.edge_graph.add_node(new_vertex_index)
+            # rand_vertex if in range
+            if edge_without_collision(self.__collision_array_yx, (near_vertex, new_vertex)):
                 vertex_list_yx.append(new_vertex)
-                self.__add_bidirectional_edge(new_vertex_index, near_vertex_index, round(calc_distance(
-                    vertex_list_yx[new_vertex_index],
-                    vertex_list_yx[near_vertex_index])))
-                self.__view.draw_line_yx(new_vertex,
-                                         vertex_list_yx[near_vertex_index],
-                                         'orange')
+                self.__append_rrt_algorithm_edge(
+                    new_index=new_vertex_index,
+                    new_vertex=new_vertex,
+                    start_index=near_vertex_index,
+                    start_point=near_vertex)
+
                 if (calc_distance(new_vertex, self.__goal_config_yx) < max_range) \
-                        and edge_without_collision(self.__collision_array_yx,
-                                                   [self.__goal_config_yx, new_vertex], (0, 1)):
-                    self.edge_graph.add_node(len(vertex_list_yx))
+                        and edge_without_collision(self.__collision_array_yx, [self.__goal_config_yx, new_vertex]):
+                    goal_index = len(vertex_list_yx)
                     vertex_list_yx.append(self.__goal_config_yx)
-                    self.__add_bidirectional_edge(new_vertex_index,
-                                                  len(vertex_list_yx) - 1,
-                                                  round(calc_distance(new_vertex, self.__goal_config_yx)))
-                    self.__view.draw_line_yx(new_vertex,
-                                             self.__goal_config_yx,
-                                             'orange')
-                    path = find_path(self.edge_graph, 0, len(vertex_list_yx) - 1)
+                    self.__append_rrt_algorithm_edge(
+                        new_index=goal_index,
+                        new_vertex=self.__goal_config_yx,
+                        start_index=new_vertex_index,
+                        start_point=new_vertex)
+                    path = find_path(self.__edge_graph, 0, len(vertex_list_yx) - 1)
                     break
         # draw solution
         for i in vertex_list_yx:
@@ -204,9 +218,9 @@ def tuples_under_distance(collision_array_yx, points_yx: [], distance) -> []:
     return filter(None, valid_edge)
 
 
-def edge_without_collision(collision_array_yx, points_yx: [], points_index_tuple: []):
-    start_yx = points_yx[points_index_tuple[0]]
-    goal_yx = points_yx[points_index_tuple[1]]
+def edge_without_collision(collision_array_yx, points_yx_tuple: [], points_index_tuple: [] = (0, 1)):
+    start_yx = points_yx_tuple[points_index_tuple[0]]
+    goal_yx = points_yx_tuple[points_index_tuple[1]]
     step_range = round(calc_distance(start_yx, goal_yx))
     for step in range(1, step_range):
         point_yx = calc_point_between(start_yx, goal_yx, step, step_range)

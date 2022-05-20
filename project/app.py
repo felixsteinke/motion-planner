@@ -28,8 +28,8 @@ def main():  # Method Declaration the indentation works as '{'
         app_window.paint_background(workspace.is_in_collision(event.x, event.y))
 
     def move_slider(val):  # shows the robot on the current slider timestamp
-        if configspace.solution_path_yx:
-            point_yx = configspace.solution_path_yx[int(val)]
+        if configspace.solution_pixel_yx:
+            point_yx = configspace.solution_pixel_yx[int(val)]
             workspace.draw_robot_state(point_yx[1], point_yx[0])
             app_window.paint_background(workspace.is_in_collision(point_yx[1], point_yx[0]))
 
@@ -46,12 +46,12 @@ def main():  # Method Declaration the indentation works as '{'
     def execute_sprm():
         configspace.execute_SPRM_algorithm()
         slider['from_'] = 0
-        slider['to_'] = len(configspace.solution_path_yx) - 1
+        slider['to_'] = len(configspace.solution_pixel_yx) - 1
 
     def execute_rrt():
         configspace.execute_RRT_algorithm()
         slider['from_'] = 0
-        slider['to_'] = len(configspace.solution_path_yx) - 1
+        slider['to_'] = len(configspace.solution_pixel_yx) - 1
 
     def reset_action():
         workspace.reset()
