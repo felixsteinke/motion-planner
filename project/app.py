@@ -28,8 +28,8 @@ def main():  # Method Declaration the indentation works as '{'
         app_window.paint_background(workspace.is_in_collision(event.x, event.y))
 
     def move_slider(val):  # shows the robot on the current slider timestamp
-        if configspace.solution_pixel_yx:
-            point_yx = configspace.solution_pixel_yx[int(val)]
+        if configspace.solution_pixels_yx:
+            point_yx = configspace.solution_pixels_yx[int(val)]
             workspace.draw_robot_state(point_yx[1], point_yx[0])
             app_window.paint_background(workspace.is_in_collision(point_yx[1], point_yx[0]))
 
@@ -46,12 +46,15 @@ def main():  # Method Declaration the indentation works as '{'
     def execute_sprm():
         configspace.execute_sprm()
         slider['from_'] = 0
-        slider['to_'] = len(configspace.solution_pixel_yx) - 1
+        slider['to_'] = len(configspace.solution_pixels_yx) - 1
 
     def execute_rrt():
         configspace.execute_rrt()
         slider['from_'] = 0
-        slider['to_'] = len(configspace.solution_pixel_yx) - 1
+        slider['to_'] = len(configspace.solution_pixels_yx) - 1
+
+    def benchmark():
+        configspace.execute_benchmark()
 
     def reset_action():
         workspace.reset()
@@ -68,8 +71,9 @@ def main():  # Method Declaration the indentation works as '{'
     app_window.add_button('Set Goal', 2, set_goal_action)
     app_window.add_button('Execute sPRM', 3, execute_sprm)
     app_window.add_button('Execute RRT', 4, execute_rrt)
-    app_window.add_button('Reset', 5, reset_action)
-    app_window.add_button('Restart', 6, restart_action)
+    app_window.add_button('Benchmark', 5, benchmark)
+    app_window.add_button('Reset', 6, reset_action)
+    app_window.add_button('Restart', 7, restart_action)
 
     # === APP THREAD ===================================================================================================
 

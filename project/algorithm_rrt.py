@@ -55,7 +55,10 @@ class RrtAlgorithm:
                 goal_vertex_index = len(self.vertex_array)
                 self.__append_vertex_and_edge(new_index=goal_vertex_index, new_vertex=c_goal,
                                               near_index=new_vertex_index, near_vertex=c_new)
-                shortest_path = dijkstar.find_path(graph=self.__edge_graph, s=0, d=goal_vertex_index)
+                try:
+                    shortest_path = dijkstar.find_path(graph=self.__edge_graph, s=0, d=goal_vertex_index)
+                except dijkstar.algorithm.NoPathError:
+                    shortest_path = None
                 end_time = time.time()
                 self.__result_interpretation(path_info=shortest_path, elapsed_time=end_time - start_time)
                 break

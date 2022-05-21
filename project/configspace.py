@@ -19,7 +19,7 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__init_config_yx = []  # position of the start Image
         self.__goal_config_yx = []  # position of the goal Image
 
-        self.solution_pixel_yx = []  # array of Waypoints
+        self.solution_pixels_yx = []  # array of Waypoints
 
     def __draw_configuration_state(self):
         self.__view.reset()
@@ -36,30 +36,31 @@ class Configspace:  # shows the way of the robot the algorithm
         for edge_yx in edge_samples:
             self.__view.draw_line_yx(edge_yx[0], edge_yx[1], 'blue')
         # draw init config
-        start_vertex_yx = solution_path[0]
-        self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'green')
-        # draw path
-        for i in range(1, len(solution_path) - 1):
-            end_vertex_yx = solution_path[i]
-            self.__view.draw_point(end_vertex_yx[1], end_vertex_yx[0], 'yellow')
-            self.__view.draw_line_yx(start_vertex_yx, end_vertex_yx, 'red')
-            start_vertex_yx = end_vertex_yx
-        # draw goal config
-        goal_vertex_yx = solution_path[len(solution_path) - 1]
-        self.__view.draw_point(goal_vertex_yx[1], goal_vertex_yx[0], 'red')
-        self.__view.draw_line_yx(start_vertex_yx, goal_vertex_yx, 'red')
+        if solution_path:
+            start_vertex_yx = solution_path[0]
+            self.__view.draw_point(start_vertex_yx[1], start_vertex_yx[0], 'green')
+            # draw path
+            for i in range(1, len(solution_path) - 1):
+                end_vertex_yx = solution_path[i]
+                self.__view.draw_point(end_vertex_yx[1], end_vertex_yx[0], 'yellow')
+                self.__view.draw_line_yx(start_vertex_yx, end_vertex_yx, 'red')
+                start_vertex_yx = end_vertex_yx
+            # draw goal config
+            goal_vertex_yx = solution_path[len(solution_path) - 1]
+            self.__view.draw_point(goal_vertex_yx[1], goal_vertex_yx[0], 'red')
+            self.__view.draw_line_yx(start_vertex_yx, goal_vertex_yx, 'red')
 
     def __convert_solution_path(self, solution_vertex_array_yx: []) -> None:
         if solution_vertex_array_yx:
             start_vertex_yx = solution_vertex_array_yx[0]
-            self.solution_pixel_yx.append(start_vertex_yx)
+            self.solution_pixels_yx.append(start_vertex_yx)
             for vertex_index in range(1, len(solution_vertex_array_yx)):
                 next_vertex_yx = solution_vertex_array_yx[vertex_index]
-                self.solution_pixel_yx.extend(calc_all_points_between_xy(start_vertex_yx, next_vertex_yx))
+                self.solution_pixels_yx.extend(calc_all_points_between_xy(start_vertex_yx, next_vertex_yx))
                 start_vertex_yx = next_vertex_yx
 
     def __reset_solution(self):
-        self.solution_pixel_yx = []
+        self.solution_pixels_yx = []
         self.__view.reset()
 
     def reset(self) -> None:
@@ -93,10 +94,44 @@ class Configspace:  # shows the way of the robot the algorithm
         max_time = 10  # 10 seconds
         rrt = RrtAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
                            collision_array_yx=self.__collision_array_yx)
-        rrt.execute(c_init=self.__init_config_yx, c_goal=self.__goal_config_yx, max_range=max_range, max_time=max_time)
+        rrt.execute(c_init=self.__init_config_yx, c_goal=self.__goal_config_yx,
+                    max_range=max_range, max_time=max_time)
         self.__draw_solution(vertex_samples=rrt.vertex_array, edge_samples=rrt.edge_array,
                              solution_path=rrt.solution_vertex_array)
         self.__convert_solution_path(rrt.solution_vertex_array)
+
+    def execute_benchmark(self) -> None:
+        # Setup
+        benchmark_runs = 10
+        # sPRM
+        sprm_distance = 90
+        sprm_samples = round(self.__collision_array_yx.shape[0] * self.__collision_array_yx.shape[1] / 800)
+        sprm_metrics = BenchmarkData(benchmark_runs)
+        for i in range(0, benchmark_runs):
+            sprm = SprmAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
+                                 collision_array_yx=self.__collision_array_yx)
+            sprm.execute(c_init=self.__init_config_yx, c_goal=self.__goal_config_yx,
+                         r=sprm_distance, n=sprm_samples)
+            sprm_metrics.add_run_data(vertex_array=sprm.vertex_array, edge_array=sprm.edge_array,
+                                      calc_time=sprm.calculation_time, solution_array=sprm.solution_vertex_array)
+        # RRT
+        rrt_max_range = 250
+        rrt_max_time = 100  # 10 seconds
+        rrt_benchmark = BenchmarkData(benchmark_runs)
+        for i in range(0, benchmark_runs):
+            rrt = RrtAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
+                               collision_array_yx=self.__collision_array_yx)
+            rrt.execute(c_init=self.__init_config_yx, c_goal=self.__goal_config_yx,
+                        max_range=rrt_max_range, max_time=rrt_max_time)
+            rrt_benchmark.add_run_data(vertex_array=rrt.vertex_array, edge_array=rrt.edge_array,
+                                       calc_time=rrt.calculation_time, solution_array=rrt.solution_vertex_array)
+        # BENCHMARK
+        sprm_metrics.calc_average()
+        print('[BENCHMARK] sPRM: vertices={} , edges={} , time={}sec , solution_nodes={}'
+              .format(sprm_metrics.vertices, sprm_metrics.edges, sprm_metrics.time, sprm_metrics.solution_nodes))
+        rrt_benchmark.calc_average()
+        print('[BENCHMARK] RRT: vertices={} , edges={} , time={}sec , solution_nodes={}'
+              .format(rrt_benchmark.vertices, rrt_benchmark.edges, rrt_benchmark.time, rrt_benchmark.solution_nodes))
 
 
 def calc_all_points_between_xy(start_yx, goal_yx):
@@ -105,3 +140,27 @@ def calc_all_points_between_xy(start_yx, goal_yx):
     for step in range(1, step_range):
         result.append(algorithms.calc_point_between(start_yx, goal_yx, step, step_range))
     return result
+
+
+class BenchmarkData:
+    def __init__(self, benchmark_runs: int = 25):
+        self.benchmark_runs = benchmark_runs
+        self.vertices = 0
+        self.edges = 0
+        self.time = 0
+        self.solution_nodes = 0
+
+    def add_run_data(self, vertex_array: [], edge_array: [], calc_time: int, solution_array: []) -> None:
+        if solution_array:
+            self.vertices += len(vertex_array)
+            self.edges += len(edge_array)
+            self.time += calc_time
+            self.solution_nodes += len(solution_array)
+        else:
+            self.benchmark_runs -= 1
+
+    def calc_average(self):
+        self.vertices /= self.benchmark_runs
+        self.edges /= self.benchmark_runs
+        self.time /= self.benchmark_runs
+        self.solution_nodes /= self.benchmark_runs
