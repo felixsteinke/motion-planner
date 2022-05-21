@@ -44,12 +44,12 @@ def main():  # Method Declaration the indentation works as '{'
             configspace.set_goal_config(workspace.current_position_xy[0], workspace.current_position_xy[1])
 
     def execute_sprm():
-        configspace.execute_SPRM_algorithm()
+        configspace.execute_sprm()
         slider['from_'] = 0
         slider['to_'] = len(configspace.solution_pixel_yx) - 1
 
     def execute_rrt():
-        configspace.execute_RRT_algorithm()
+        configspace.execute_rrt()
         slider['from_'] = 0
         slider['to_'] = len(configspace.solution_pixel_yx) - 1
 

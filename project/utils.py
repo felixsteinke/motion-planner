@@ -13,8 +13,8 @@ def greyscale_is_black(value: int) -> bool:
     return value < 240  # matt pixel (241-255)
 
 
-def greyscale_is_not_black(value: int) -> bool:
-    return value > 1
+def is_not_black(greyscale_value: int) -> bool:
+    return greyscale_value > 1
 
 
 def greyscale_is_dark(value: int) -> bool:
