@@ -41,6 +41,8 @@ class SprmAlgorithm:
             for node_index in path_info.nodes:
                 self.solution_vertex_array.append(self.vertex_array[node_index])
             print('[sPRM] Path Nodes: {}'.format(len(self.solution_vertex_array)))
+        else:
+            print('[sPRM] No path found!')
 
     def execute(self, c_init: [], c_goal: [], r: int, n: int):
         # setup
@@ -67,7 +69,10 @@ class SprmAlgorithm:
         for point_index_tuple in tuples_under_distance(self.__collision_array, self.vertex_array, r):
             self.__append_edge(index_tuple=point_index_tuple)
         # calculate the shortest path
-        shortest_path = dijkstar.find_path(graph=self.__edge_graph, s=0, d=1)
+        try:
+            shortest_path = dijkstar.find_path(graph=self.__edge_graph, s=0, d=1)
+        except dijkstar.algorithm.NoPathError:
+            shortest_path = None
         # teardown
         end_time = time.time()
         self.__result_interpretation(path_info=shortest_path, elapsed_time=end_time - start_time)

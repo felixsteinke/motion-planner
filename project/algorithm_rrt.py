@@ -39,6 +39,8 @@ class RrtAlgorithm:
             for node_index in path_info.nodes:
                 self.solution_vertex_array.append(self.vertex_array[node_index])
             print('[RRT] Path Nodes: {}'.format(len(self.solution_vertex_array)))
+        else:
+            print('[RRT] No path found!')
 
     def execute(self, c_init: [], c_goal: [], max_range: int, max_time: int):
         print('[RRT] c_init[x={init[1]},y={init[0]}], c_goal[x={goal[1]},y={goal[0]}], range={r}, time={t}sec'
