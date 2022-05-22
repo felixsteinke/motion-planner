@@ -59,7 +59,7 @@ class AppWindow:
 
     @staticmethod
     def __root_geometry(screen_width: int, screen_height: int) -> str:
-        window_width = 1020
+        window_width = 1060
         window_height = 800
         pos_x = int(screen_width / 2 - window_width / 2)
         pos_y = int(screen_height / 2 - window_height / 2)
