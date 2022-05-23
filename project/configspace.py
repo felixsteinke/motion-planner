@@ -114,7 +114,8 @@ class Configspace:  # shows the way of the robot the algorithm
             sprm.execute(c_init=self.__init_config_yx, c_goal=self.__goal_config_yx,
                          r=sprm_distance, n=sprm_samples)
             sprm_metrics.add_run_data(vertex_array=sprm.vertex_array, edge_array=sprm.edge_array,
-                                      calc_time=sprm.calculation_time, solution_array=sprm.solution_vertex_array)
+                                      calc_time=sprm.calculation_time, solution_array=sprm.solution_vertex_array,
+                                      solution_length=sprm.path_length)
         # RRT
         rrt_max_range = 90
         rrt_max_time = 100  # 10 seconds
@@ -125,7 +126,8 @@ class Configspace:  # shows the way of the robot the algorithm
             rrt.execute(c_init=self.__init_config_yx, c_goal=self.__goal_config_yx,
                         max_range=rrt_max_range, max_time=rrt_max_time)
             rrt_metrics.add_run_data(vertex_array=rrt.vertex_array, edge_array=rrt.edge_array,
-                                     calc_time=rrt.calculation_time, solution_array=rrt.solution_vertex_array)
+                                     calc_time=rrt.calculation_time, solution_array=rrt.solution_vertex_array,
+                                     solution_length=rrt.path_length)
         # BENCHMARK
         sprm_result = sprm_metrics.get_result()
         rrt_result = rrt_metrics.get_result()
@@ -146,24 +148,56 @@ class BenchmarkData:
         self.__name = name
         self.__runs = runs
         self.__vertices = 0
+        self.__max_vertices = 0
+        self.__min_vertices = 99999999
         self.__edges = 0
+        self.__max_edges = 0
+        self.__min_edges = 99999999
         self.__time = 0
+        self.__max_time = 0
+        self.__min_time = 99999999
         self.__solutions = runs
         self.__solution_nodes = 0
         self.__max_solution_nodes = 0
         self.__min_solution_nodes = 99999999
+        self.__solution_length = 0
+        self.__max_solution_length = 0
+        self.__min_solution_length = 99999999
 
-    def add_run_data(self, vertex_array: [], edge_array: [], calc_time: int, solution_array: []) -> None:
+    def add_run_data(self, vertex_array: [], edge_array: [], calc_time: int, solution_array: [], solution_length: int):
+        run_vertices = len(vertex_array)
+        self.__vertices += run_vertices
+        if run_vertices > self.__max_vertices:
+            self.__max_vertices = run_vertices
+        if run_vertices < self.__min_vertices:
+            self.__min_vertices = run_vertices
+
+        run_edges = len(edge_array)
+        self.__edges += run_edges
+        if run_edges > self.__max_edges:
+            self.__max_edges = run_edges
+        if run_edges < self.__min_edges:
+            self.__min_edges = run_edges
+
+        self.__time += calc_time
+        if calc_time > self.__max_time:
+            self.__max_time = calc_time
+        if calc_time < self.__min_time:
+            self.__min_time = calc_time
+
         if solution_array:
-            self.__vertices += len(vertex_array)
-            self.__edges += len(edge_array)
-            self.__time += calc_time
-            if solution_array:
-                self.__solution_nodes += len(solution_array)
-            if len(solution_array) > self.__max_solution_nodes:
-                self.__max_solution_nodes = len(solution_array)
+            run_solution_nodes = len(solution_array)
+            self.__solution_nodes += run_solution_nodes
+            if run_solution_nodes > self.__max_solution_nodes:
+                self.__max_solution_nodes = run_solution_nodes
             if len(solution_array) < self.__min_solution_nodes:
-                self.__min_solution_nodes = len(solution_array)
+                self.__min_solution_nodes = run_solution_nodes
+
+            self.__solution_length += solution_length
+            if solution_length > self.__max_solution_length:
+                self.__max_solution_length = solution_length
+            if solution_length < self.__min_solution_length:
+                self.__min_solution_length = solution_length
         else:
             self.__solutions -= 1
 
@@ -173,12 +207,19 @@ class BenchmarkData:
         self.__time /= self.__runs
         if self.__solutions:
             self.__solution_nodes /= self.__solutions
+            self.__solution_length /= self.__solutions
 
     def get_result(self) -> str:
         self.__calc_average()
-        return '[BENCHMARK] {} \n' \
-               '{} runs: vertices={} , edges={} , time={}sec\n' \
-               '{} solutions: avg_nodes={}, min_nodes={}, max_nodes={}' \
-            .format(self.__name,
-                    self.__runs, self.__vertices, self.__edges, self.__time,
-                    self.__solutions, self.__solution_nodes, self.__min_solution_nodes, self.__max_solution_nodes)
+        return '[BENCHMARK] {}: runs={}, solutions={}\n' \
+               'Vertices: avg={}, min={}, max={}\n' \
+               'Edges: avg={}, min={}, max={}\n' \
+               'Times (sec): avg={}, min={}, max={}\n' \
+               'Solution Nodes: avg={}, min={}, max={}\n' \
+               'Solution Length: avg={}, min={}, max={}' \
+            .format(self.__name, self.__runs, self.__solutions,
+                    self.__vertices, self.__min_vertices, self.__max_vertices,
+                    self.__edges, self.__min_edges, self.__max_edges,
+                    self.__time, self.__min_time, self.__max_time,
+                    self.__solution_nodes, self.__min_solution_nodes, self.__max_solution_nodes,
+                    self.__solution_length, self.__min_solution_length, self.__max_solution_length)
