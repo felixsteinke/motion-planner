@@ -20,6 +20,7 @@ class RrtAlgorithm:
         self.calculation_time = 0
         self.path_length = 0
         self.solution_vertex_array = []  # [index] = [y, x]
+        self.summary = 'Algorithm not executed!'
 
     def __append_vertex(self, index: int, vertex: []):
         self.vertex_array.append(vertex)
@@ -34,15 +35,18 @@ class RrtAlgorithm:
         self.__edge_graph.add_edge(near_index, new_index, distance)
 
     def __result_interpretation(self, path_info, elapsed_time):
-        print('[RRT] Calculation Time: {}sec'.format(elapsed_time))
         self.calculation_time = elapsed_time
+        self.summary = '[RRT] Summary:\n' \
+                       'Execution: vertices={}, edges={}, time={}sec\n' \
+            .format(len(self.vertex_array), len(self.edge_array), round(self.calculation_time, 5))
         if path_info:
             self.path_length = path_info.total_cost
             for node_index in path_info.nodes:
                 self.solution_vertex_array.append(self.vertex_array[node_index])
-            print('[RRT] Path Nodes: {}'.format(len(self.solution_vertex_array)))
+            self.summary += 'Solution: nodes={}, length={}' \
+                .format(len(self.solution_vertex_array), self.path_length)
         else:
-            print('[RRT] No path found!')
+            self.summary += 'Solution: Not found!'
 
     def execute(self, c_init: [], c_goal: [], max_range: int, max_time: int):
         print('[RRT] c_init[x={init[1]},y={init[0]}], c_goal[x={goal[1]},y={goal[0]}], range={r}, time={t}sec'

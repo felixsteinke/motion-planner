@@ -75,6 +75,6 @@ class BenchmarkData:
             .format(self.__name, self.__runs, self.__solutions,
                     self.__vertices, self.__min_vertices, self.__max_vertices,
                     self.__edges, self.__min_edges, self.__max_edges,
-                    self.__time, self.__min_time, self.__max_time,
+                    round(self.__time, 5), round(self.__min_time, 5), round(self.__max_time, 5),
                     self.__solution_nodes, self.__min_solution_nodes, self.__max_solution_nodes,
                     self.__solution_length, self.__min_solution_length, self.__max_solution_length)
