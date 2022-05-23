@@ -4,6 +4,7 @@ from collisionspace import Collisionspace
 from configspace_view import ConfigspaceView
 from project import algorithms
 from utils import open_greyscale_bmp
+from benchmark_data import BenchmarkData
 
 
 class Configspace:  # shows the way of the robot the algorithm
@@ -107,34 +108,32 @@ class Configspace:  # shows the way of the robot the algorithm
         # sPRM
         sprm_distance = 90
         sprm_samples = round(self.__collision_array_yx.shape[0] * self.__collision_array_yx.shape[1] / 800)
-        sprm_metrics = BenchmarkData(benchmark_runs)
+        sprm_metrics = BenchmarkData(name='sPRM', runs=benchmark_runs)
         for i in range(0, benchmark_runs):
             sprm = SprmAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
                                  collision_array_yx=self.__collision_array_yx)
             sprm.execute(c_init=self.__init_config_yx, c_goal=self.__goal_config_yx,
                          r=sprm_distance, n=sprm_samples)
             sprm_metrics.add_run_data(vertex_array=sprm.vertex_array, edge_array=sprm.edge_array,
-                                      calc_time=sprm.calculation_time, solution_array=sprm.solution_vertex_array)
+                                      calc_time=sprm.calculation_time, solution_array=sprm.solution_vertex_array,
+                                      solution_length=sprm.path_length)
         # RRT
         rrt_max_range = 90
         rrt_max_time = 100  # 10 seconds
-        rrt_metrics = BenchmarkData(benchmark_runs)
+        rrt_metrics = BenchmarkData(name='RRT', runs=benchmark_runs)
         for i in range(0, benchmark_runs):
             rrt = RrtAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
                                collision_array_yx=self.__collision_array_yx)
             rrt.execute(c_init=self.__init_config_yx, c_goal=self.__goal_config_yx,
                         max_range=rrt_max_range, max_time=rrt_max_time)
             rrt_metrics.add_run_data(vertex_array=rrt.vertex_array, edge_array=rrt.edge_array,
-                                     calc_time=rrt.calculation_time, solution_array=rrt.solution_vertex_array)
+                                     calc_time=rrt.calculation_time, solution_array=rrt.solution_vertex_array,
+                                     solution_length=rrt.path_length)
         # BENCHMARK
-        sprm_metrics.calc_average()
-        print('[BENCHMARK] sPRM: vertices={} , edges={} , time={}sec , solution_nodes={}, solutions={}'
-              .format(sprm_metrics.vertices, sprm_metrics.edges, sprm_metrics.time,
-                      sprm_metrics.solution_nodes, sprm_metrics.runs))
-        rrt_metrics.calc_average()
-        print('[BENCHMARK] RRT: vertices={} , edges={} , time={}sec , solution_nodes={}, solutions={}'
-              .format(rrt_metrics.vertices, rrt_metrics.edges, rrt_metrics.time,
-                      rrt_metrics.solution_nodes, rrt_metrics.runs))
+        sprm_result = sprm_metrics.get_result()
+        rrt_result = rrt_metrics.get_result()
+        print(sprm_result)
+        print(rrt_result)
 
 
 def calc_all_points_between_xy(start_yx, goal_yx):
@@ -143,27 +142,3 @@ def calc_all_points_between_xy(start_yx, goal_yx):
     for step in range(1, step_range):
         result.append(algorithms.calc_point_between(start_yx, goal_yx, step, step_range))
     return result
-
-
-class BenchmarkData:
-    def __init__(self, benchmark_runs: int = 25):
-        self.runs = benchmark_runs
-        self.vertices = 0
-        self.edges = 0
-        self.time = 0
-        self.solution_nodes = 0
-
-    def add_run_data(self, vertex_array: [], edge_array: [], calc_time: int, solution_array: []) -> None:
-        if solution_array:
-            self.vertices += len(vertex_array)
-            self.edges += len(edge_array)
-            self.time += calc_time
-            self.solution_nodes += len(solution_array)
-        else:
-            self.runs -= 1
-
-    def calc_average(self):
-        self.vertices /= self.runs
-        self.edges /= self.runs
-        self.time /= self.runs
-        self.solution_nodes /= self.runs

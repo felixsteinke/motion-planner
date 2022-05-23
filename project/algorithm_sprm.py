@@ -19,6 +19,7 @@ class SprmAlgorithm:
         self.edge_array = []  # [index] = [(y,x), (y,x)]
         # solution
         self.calculation_time = 0
+        self.path_length = 0
         self.solution_vertex_array = []  # [index] = [y, x]
 
     def __append_vertex(self, index: int, vertex: []):
@@ -38,6 +39,7 @@ class SprmAlgorithm:
         print('[sPRM] Calculation Time: {}sec'.format(elapsed_time))
         self.calculation_time = elapsed_time
         if path_info:
+            self.path_length = path_info.total_cost
             for node_index in path_info.nodes:
                 self.solution_vertex_array.append(self.vertex_array[node_index])
             print('[sPRM] Path Nodes: {}'.format(len(self.solution_vertex_array)))
