@@ -21,6 +21,7 @@ class SprmAlgorithm:
         self.calculation_time = 0
         self.path_length = 0
         self.solution_vertex_array = []  # [index] = [y, x]
+        self.summary = 'Algorithm not executed!'
 
     def __append_vertex(self, index: int, vertex: []):
         self.vertex_array.append(vertex)
@@ -36,15 +37,18 @@ class SprmAlgorithm:
         self.__edge_graph.add_edge(index_tuple[1], index_tuple[0], distance)
 
     def __result_interpretation(self, path_info, elapsed_time):
-        print('[sPRM] Calculation Time: {}sec'.format(elapsed_time))
         self.calculation_time = elapsed_time
+        self.summary = '[sPRM] Summary:\n' \
+                       'Execution: vertices={}, edges={}, time={}sec\n'\
+            .format(len(self.vertex_array), len(self.edge_array), round(self.calculation_time, 5))
         if path_info:
             self.path_length = path_info.total_cost
             for node_index in path_info.nodes:
                 self.solution_vertex_array.append(self.vertex_array[node_index])
-            print('[sPRM] Path Nodes: {}'.format(len(self.solution_vertex_array)))
+            self.summary += 'Solution: nodes={}, length={}'\
+                .format(len(self.solution_vertex_array), self.path_length)
         else:
-            print('[sPRM] No path found!')
+            self.summary += 'Solution: Not found!'
 
     def execute(self, c_init: [], c_goal: [], r: int, n: int):
         # setup

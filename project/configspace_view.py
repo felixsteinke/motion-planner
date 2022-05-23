@@ -58,12 +58,10 @@ class ConfigspaceView:
 
     @staticmethod
     def open_info_dialog(message: str):
+        print(message)
         tkinter.messagebox.showinfo('Configspace', message)
 
     @staticmethod
     def open_warn_dialog(message: str):
+        print(message)
         tkinter.messagebox.showwarning('Configspace', message)
-
-    @staticmethod
-    def open_error_dialog(message: str):
-        tkinter.messagebox.showerror('Configspace', message)

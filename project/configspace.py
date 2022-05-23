@@ -31,10 +31,10 @@ class Configspace:  # shows the way of the robot the algorithm
 
     def __configuration_valid(self) -> bool:
         if not self.__init_config_yx:
-            self.__view.open_error_dialog('Init Configuration is missing!')
+            self.__view.open_warn_dialog('Init Configuration is missing!')
             return False
         if not self.__goal_config_yx:
-            self.__view.open_error_dialog('Goal Configuration is missing!')
+            self.__view.open_warn_dialog('Goal Configuration is missing!')
             return False
         return True
 
@@ -59,6 +59,9 @@ class Configspace:  # shows the way of the robot the algorithm
             goal_vertex_yx = solution_path[len(solution_path) - 1]
             self.__view.draw_point(goal_vertex_yx[1], goal_vertex_yx[0], 'red')
             self.__view.draw_line_yx(start_vertex_yx, goal_vertex_yx, 'red')
+        else:
+            self.__view.draw_point(self.__init_config_yx[1], self.__init_config_yx[0], 'green')
+            self.__view.draw_point(self.__goal_config_yx[1], self.__goal_config_yx[0], 'red')
 
     def __convert_solution_path(self, solution_vertex_array_yx: []) -> None:
         if solution_vertex_array_yx:
@@ -99,6 +102,7 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__draw_solution(vertex_samples=sprm.vertex_array, edge_samples=sprm.edge_array,
                              solution_path=sprm.solution_vertex_array)
         self.__convert_solution_path(sprm.solution_vertex_array)
+        self.__view.open_info_dialog(sprm.summary)
 
     def execute_rrt(self) -> None:
         self.__reset_solution()
@@ -113,13 +117,14 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__draw_solution(vertex_samples=rrt.vertex_array, edge_samples=rrt.edge_array,
                              solution_path=rrt.solution_vertex_array)
         self.__convert_solution_path(rrt.solution_vertex_array)
+        self.__view.open_info_dialog(rrt.summary)
 
     def execute_benchmark(self) -> None:
         if not self.__configuration_valid():
             return
         # Setup
         benchmark_runs = 10
-        print('[BENCHMARK] Executing {} runs.'.format(benchmark_runs))
+        self.__view.open_info_dialog('[BENCHMARK] Executing {} runs after OK. Be patient.'.format(benchmark_runs))
         # sPRM
         sprm_distance = 90
         sprm_samples = round(self.__collision_array_yx.shape[0] * self.__collision_array_yx.shape[1] / 800)
@@ -145,10 +150,7 @@ class Configspace:  # shows the way of the robot the algorithm
                                      calc_time=rrt.calculation_time, solution_array=rrt.solution_vertex_array,
                                      solution_length=rrt.path_length)
         # BENCHMARK
-        sprm_result = sprm_metrics.get_result()
-        rrt_result = rrt_metrics.get_result()
-        print(sprm_result)
-        print(rrt_result)
+        self.__view.open_info_dialog(sprm_metrics.get_result() + '\n\n' + rrt_metrics.get_result())
 
 
 def calc_all_points_between_xy(start_yx, goal_yx):
