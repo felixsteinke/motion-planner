@@ -1,3 +1,4 @@
+import tkinter.messagebox
 from tkinter import *
 
 from PIL import ImageTk
@@ -54,3 +55,15 @@ class ConfigspaceView:
 
     def draw_line_yx(self, start_point: [], goal_point: [], color) -> None:
         self.__canvas.create_line(start_point[1], start_point[0], goal_point[1], goal_point[0], fill=color)
+
+    @staticmethod
+    def open_info_dialog(message: str):
+        tkinter.messagebox.showinfo('Configspace', message)
+
+    @staticmethod
+    def open_warn_dialog(message: str):
+        tkinter.messagebox.showwarning('Configspace', message)
+
+    @staticmethod
+    def open_error_dialog(message: str):
+        tkinter.messagebox.showerror('Configspace', message)

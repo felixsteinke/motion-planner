@@ -29,6 +29,15 @@ class Configspace:  # shows the way of the robot the algorithm
         if self.__goal_config_yx:
             self.__view.draw_point(self.__goal_config_yx[1], self.__goal_config_yx[0], 'red')
 
+    def __configuration_valid(self) -> bool:
+        if not self.__init_config_yx:
+            self.__view.open_error_dialog('Init Configuration is missing!')
+            return False
+        if not self.__goal_config_yx:
+            self.__view.open_error_dialog('Goal Configuration is missing!')
+            return False
+        return True
+
     def __draw_solution(self, vertex_samples: [], edge_samples: [], solution_path: []):
         # draw all vertex samples
         for vertex_yx in vertex_samples:
@@ -80,6 +89,8 @@ class Configspace:  # shows the way of the robot the algorithm
 
     def execute_sprm(self) -> None:
         self.__reset_solution()
+        if not self.__configuration_valid():
+            return
         distance = 90
         samples = round(self.__collision_array_yx.shape[0] * self.__collision_array_yx.shape[1] / 800)
         sprm = SprmAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
@@ -91,6 +102,8 @@ class Configspace:  # shows the way of the robot the algorithm
 
     def execute_rrt(self) -> None:
         self.__reset_solution()
+        if not self.__configuration_valid():
+            return
         max_range = 90
         max_time = 100  # 10 seconds
         rrt = RrtAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
@@ -102,6 +115,8 @@ class Configspace:  # shows the way of the robot the algorithm
         self.__convert_solution_path(rrt.solution_vertex_array)
 
     def execute_benchmark(self) -> None:
+        if not self.__configuration_valid():
+            return
         # Setup
         benchmark_runs = 10
         print('[BENCHMARK] Executing {} runs.'.format(benchmark_runs))
