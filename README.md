@@ -11,11 +11,11 @@ done with Python `3.10.3` and the [dependencies](requirements.txt) were updated 
 This project was created within a lecture of __Datastructures and Algorithms__. It implements several functions like
 __Collision Detection__ and __Motion Planning__ with calculations in the several spaces.
 
-## Installation
+## Installation & Run
 
-You should create a virtual environment (`venv`) and install the required packages with the following commands:
+A virtual environment (`venv`) is used to install required packages to run the application afterwards.
 
-Windows:
+### Windows
 
 ```shell
 python -m venv env
@@ -23,26 +23,18 @@ python -m venv env
 (env) $ pip install -r requirements.txt
 ```
 
-Linux:
+```shell
+.\env\Scripts\activate 
+(env) $ python app.py
+```
+
+### Linux:
 
 ```shell
 python3 -m venv env
 source env/bin/activate
 (env) $ pip install -r requirements.txt
 ```
-
-## Run
-
-In order to run it makes sure that your `venv` is installed.
-
-Windows:
-
-```shell
-.\env\Scripts\activate 
-(env) $ python app.py
-```
-
-Linux:
 
 ```shell
 source env/bin/activate
@@ -52,21 +44,28 @@ source env/bin/activate
 ## Architecture
 
 ```
-              app.py
-                |
-    ------- controller ----------   
-    |           |               |
-workspace   configspace   collisionspace
+                          app.py ------ option_window
+                             |
+    configspace_view --- app_window --- workspace_view
+            |                                 |
+    --- configspace ---                   workspace
+    |                 |
+algorithms      collisionspace
+
 ```
 
 <details>
   <summary>Explanation</summary>
 
-* [app.py](project/app.py) = start the application and the UI
-* [controller.py](project/controller.py) = manages all the spaces below
-* [workspace.py](project/workspace_dep.py) = handles graphical display of algorithms and collision-detection
-* [configspace.py](project/configspace_dep.py) = handles the motion-planning algorithms
-* [collisionspace.py](project/collisionspace_dep.py) = calculates and shows collision-space
+* [app.py](project/app.py) = start the application and controls interactions
+* [app_window](project/app_window.py) = main application window with child views
+* [option_window](project/option_window.py) = top level option window, to select base parameters
+* [workspace_view](project/workspace_view.py) = child page to display workspace
+* [workspace](project/workspace.py) = calculation of initial configuration
+* [configspace_view](project/configspace_view.py) = child page to display configspace
+* [configspace](project/configspace.py) = calculates motions with support of collisionspace and algorithms
+* [collisionspace](project/collisionspace.py) = calculated collisionspace to speed up collision detection
+* [algorithms](project/algorithm_sprm.py) = algorithms like sprm to plan motions
 
 </details>
 
@@ -74,9 +73,11 @@ workspace   configspace   collisionspace
 
 ### Simplified Probabilistic RoadMaps (sPRM)
 
-Category: Sampling-based Motion Planner
+__Category:__ Sampling-based Motion Planner
 
 ![sPRM](.documents/algorithm_sPRM.png)
+
+__Implementation:__ [algorithm_sprm.py](./project/algorithm_sprm.py)
 
 <details>
   <summary>Explanation</summary>
@@ -122,22 +123,31 @@ Category: Single-Query Motion Planner
 
 ![RRT](.documents/algorithm_RRT.png)
 
+__Implementation:__ [algorithm_rrt.py](./project/algorithm_rrt.py)
+
 <details>
   <summary>Explanation</summary>
 
-|        Input        | Explanation |
-|:-------------------:|:------------|
-|  c<sub>init</sub>   |             |
-|  c<sub>goal</sub>   |             |
-| range<sub>max</sub> |             |
-| time<sub>max</sub>  |             |
+|        Input        | Explanation                      |
+|:-------------------:|:---------------------------------|
+|  c<sub>init</sub>   | Start points for single queries. |
+|  c<sub>goal</sub>   | End points for single queries.   |
+| range<sub>max</sub> | Max vertex distance.             |
+| time<sub>max</sub>  | Max time for calculation.        |
 
-| Datastructure | Explanation | Interpretation |
-|:-------------:|:------------|:---------------|
-|       T       |             |                |
+| Datastructure | Explanation                         | Interpretation |
+|:-------------:|:------------------------------------|:---------------|
+|       T       | tree with vertex and edge structure | Graph          |
 
-| Pseudocode Line | Explanation |
-|:---------------:|:------------|
-|        1        |             |
+| Pseudocode Line | Explanation                                                                                                                                 |
+|:---------------:|:--------------------------------------------------------------------------------------------------------------------------------------------|
+|        1        | Add (c<sup>i</sup><sub>init</sub>) to the tree.                                                                                             |
+|        2        | Run algorithm while time<sub>max</sub> is not elapsed.                                                                                      |
+|        3        | Calculate `RandomState()` vertex without collision.                                                                                         |
+|        4        | Calculate `NearestNeighbor(...)` to c<sub>rand</sub> in the existing tree.                                                                  |
+|        5        | Calculate `getValidEdge(...)` to get a new vertex on the edge between c<sub>near</sub> and c<sub>rand</sub> within the range<sub>max</sub>. |
+|     6 to 8      | If the edge between c<sub>near</sub> and c<sub>new</sub> is without collision, add it to the tree.                                          |
+|        9        | `goalReached(...)` if c<sub>goal</sub> and c<sub>new</sub> can be connected with the last edge.                                             |
+|       10        | Computation of `shortestPath(...)` with a [Dijkstra Algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm).                       |
 
 </details>
