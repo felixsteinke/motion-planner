@@ -107,7 +107,7 @@ class Configspace:  # shows the way of the robot the algorithm
         # sPRM
         sprm_distance = 90
         sprm_samples = round(self.__collision_array_yx.shape[0] * self.__collision_array_yx.shape[1] / 800)
-        sprm_metrics = BenchmarkData(benchmark_runs)
+        sprm_metrics = BenchmarkData(name='sPRM', runs=benchmark_runs)
         for i in range(0, benchmark_runs):
             sprm = SprmAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
                                  collision_array_yx=self.__collision_array_yx)
@@ -118,7 +118,7 @@ class Configspace:  # shows the way of the robot the algorithm
         # RRT
         rrt_max_range = 90
         rrt_max_time = 100  # 10 seconds
-        rrt_metrics = BenchmarkData(benchmark_runs)
+        rrt_metrics = BenchmarkData(name='RRT', runs=benchmark_runs)
         for i in range(0, benchmark_runs):
             rrt = RrtAlgorithm(x_range=[self.__min_x, self.__max_x], y_range=[self.__min_y, self.__max_y],
                                collision_array_yx=self.__collision_array_yx)
@@ -127,14 +127,10 @@ class Configspace:  # shows the way of the robot the algorithm
             rrt_metrics.add_run_data(vertex_array=rrt.vertex_array, edge_array=rrt.edge_array,
                                      calc_time=rrt.calculation_time, solution_array=rrt.solution_vertex_array)
         # BENCHMARK
-        sprm_metrics.calc_average()
-        print('[BENCHMARK] sPRM: vertices={} , edges={} , time={}sec , solution_nodes={}, solutions={}'
-              .format(sprm_metrics.vertices, sprm_metrics.edges, sprm_metrics.time,
-                      sprm_metrics.solution_nodes, sprm_metrics.runs))
-        rrt_metrics.calc_average()
-        print('[BENCHMARK] RRT: vertices={} , edges={} , time={}sec , solution_nodes={}, solutions={}'
-              .format(rrt_metrics.vertices, rrt_metrics.edges, rrt_metrics.time,
-                      rrt_metrics.solution_nodes, rrt_metrics.runs))
+        sprm_result = sprm_metrics.get_result()
+        rrt_result = rrt_metrics.get_result()
+        print(sprm_result)
+        print(rrt_result)
 
 
 def calc_all_points_between_xy(start_yx, goal_yx):
@@ -146,24 +142,43 @@ def calc_all_points_between_xy(start_yx, goal_yx):
 
 
 class BenchmarkData:
-    def __init__(self, benchmark_runs: int = 25):
-        self.runs = benchmark_runs
-        self.vertices = 0
-        self.edges = 0
-        self.time = 0
-        self.solution_nodes = 0
+    def __init__(self, name: str, runs: int = 25):
+        self.__name = name
+        self.__runs = runs
+        self.__vertices = 0
+        self.__edges = 0
+        self.__time = 0
+        self.__solutions = runs
+        self.__solution_nodes = 0
+        self.__max_solution_nodes = 0
+        self.__min_solution_nodes = 99999999
 
     def add_run_data(self, vertex_array: [], edge_array: [], calc_time: int, solution_array: []) -> None:
         if solution_array:
-            self.vertices += len(vertex_array)
-            self.edges += len(edge_array)
-            self.time += calc_time
-            self.solution_nodes += len(solution_array)
+            self.__vertices += len(vertex_array)
+            self.__edges += len(edge_array)
+            self.__time += calc_time
+            if solution_array:
+                self.__solution_nodes += len(solution_array)
+            if len(solution_array) > self.__max_solution_nodes:
+                self.__max_solution_nodes = len(solution_array)
+            if len(solution_array) < self.__min_solution_nodes:
+                self.__min_solution_nodes = len(solution_array)
         else:
-            self.runs -= 1
+            self.__solutions -= 1
 
-    def calc_average(self):
-        self.vertices /= self.runs
-        self.edges /= self.runs
-        self.time /= self.runs
-        self.solution_nodes /= self.runs
+    def __calc_average(self) -> None:
+        self.__vertices /= self.__runs
+        self.__edges /= self.__runs
+        self.__time /= self.__runs
+        if self.__solutions:
+            self.__solution_nodes /= self.__solutions
+
+    def get_result(self) -> str:
+        self.__calc_average()
+        return '[BENCHMARK] {} \n' \
+               '{} runs: vertices={} , edges={} , time={}sec\n' \
+               '{} solutions: avg_nodes={}, min_nodes={}, max_nodes={}' \
+            .format(self.__name,
+                    self.__runs, self.__vertices, self.__edges, self.__time,
+                    self.__solutions, self.__solution_nodes, self.__min_solution_nodes, self.__max_solution_nodes)
