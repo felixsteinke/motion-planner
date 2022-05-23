@@ -2,7 +2,7 @@ import os
 
 from PIL import Image, ImageOps
 
-RESOURCE_PATH = '../resources'
+RESOURCE_PATH = './resources'
 COLLISION_RESOURCE_PATH = RESOURCE_PATH + '/collision'
 
 GREYSCALE_BLACK = 0

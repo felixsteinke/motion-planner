@@ -25,7 +25,7 @@ python -m venv env
 
 ```shell
 .\env\Scripts\activate 
-(env) $ python app.py
+(env) $ python ./project/app.py
 ```
 
 ### Linux:
@@ -38,8 +38,20 @@ source env/bin/activate
 
 ```shell
 source env/bin/activate
-(env) $ python app.py
+(env) $ python ./project/app.py
 ```
+
+## Build Executable
+
+To build a standalone executable the `pyinstaller` can be used. The `.exe`-file will be created with the following
+command and contains all dependencies. The pyinstaller command was created with the support of `auto-py-to-exe`:
+
+```
+pyinstaller --noconfirm --onefile --windowed --icon "C:/Users/flogr/PycharmProjects/Motion-Planner/.documents/application_icon.ico" --name "MotionPlanner" --add-data "C:/Users/flogr/PycharmProjects/Motion-Planner/project/resources;.resources/"  "C:/Users/flogr/PycharmProjects/Motion-Planner/project/app.py"
+```
+
+The Executable can be run by placing the resource folder in the same directory. In this folder the user can specify new
+room images and new robots. Also have a look into the __Releases__ of the repository for the latest executable.
 
 ## Architecture
 

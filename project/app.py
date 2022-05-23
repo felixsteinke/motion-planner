@@ -6,6 +6,7 @@ from option_window import OptionWindow
 from workspace import Workspace
 from collisionspace import Collisionspace
 from configspace import Configspace
+from multiprocessing import freeze_support
 
 
 def main():  # Method Declaration the indentation works as '{'
@@ -82,4 +83,5 @@ def main():  # Method Declaration the indentation works as '{'
 
 if __name__ == "__main__":  # main method is defined by __main__ and the if __name__ thing is just python way of
     # saying that the name of the current main is the title of the file.
+    freeze_support()
     main()  # runs the method demo in main.

@@ -2,7 +2,7 @@ from algorithm_rrt import RrtAlgorithm
 from algorithm_sprm import SprmAlgorithm
 from collisionspace import Collisionspace
 from configspace_view import ConfigspaceView
-from project import algorithms
+import algorithms
 from utils import open_greyscale_bmp
 from benchmark_data import BenchmarkData
 
