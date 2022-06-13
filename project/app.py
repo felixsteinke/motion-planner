@@ -13,7 +13,7 @@ def main():  # Method Declaration the indentation works as '{'
 
     app_window = AppWindow()
     options = OptionWindow(app_window.root.winfo_id())
-
+    # TODO resize app window for room bmp
     room_name = options.room_name
     robot_name = options.robot_name
 

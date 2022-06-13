@@ -46,8 +46,8 @@ source env/bin/activate
 To build a standalone executable the `pyinstaller` can be used. The `.exe`-file will be created with the following
 command and contains all dependencies. The pyinstaller command was created with the support of `auto-py-to-exe`:
 
-```
-pyinstaller --noconfirm --onefile --windowed --icon "C:/Users/flogr/PycharmProjects/Motion-Planner/.documents/application_icon.ico" --name "MotionPlanner" --add-data "C:/Users/flogr/PycharmProjects/Motion-Planner/project/resources;.resources/"  "C:/Users/flogr/PycharmProjects/Motion-Planner/project/app.py"
+```shell
+pyinstaller --noconfirm --onefile --windowed --icon "./.documents/application_icon.ico" --name "MotionPlanner" --add-data "./project/resources;.resources/"  "./project/app.py"
 ```
 
 The Executable can be run by placing the resource folder in the same directory. In this folder the user can specify new
@@ -163,3 +163,33 @@ __Implementation:__ [algorithm_rrt.py](./project/algorithm_rrt.py)
 |       10        | Computation of `shortestPath(...)` with a [Dijkstra Algorithm](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm).                       |
 
 </details>
+
+## Unresolved Issues
+
+### Enhancements
+
+__Resize App Window after Room Selection:__
+
+Window size in `app-window.py` is fixed for default selection.
+Resize is needed for other room images.
+
+### Refactoring
+
+__Cleanup Benchmark Data:__
+
+* Create `KPI-object` for each `data={avg, min, max}` to not repeat yourself in the `append_run_data` method.
+* Format strings with `f"{var}"` instead of `"{}".format(var)`
+
+__Algorithm Base Class:__
+
+Create base class in algorithms for algorithm_rrt and algorithm_sprm to reduce duplicated code.
+
+### Bugs
+
+__RRT reaches goal with invalid edge:__
+
+Happens 2/10 times.
+
+Goal is reachable, but algorithm miscalculates an edge?
+
+Approach: debug why `goal_reached` clause is found, but `dijkstra` doesn't find the path
