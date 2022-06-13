@@ -1,5 +1,6 @@
 class BenchmarkData:
     def __init__(self, name: str, runs: int = 25):
+        # TODO refactor with KPI object
         self.__name = name
         self.__runs = runs
         self.__vertices = 0

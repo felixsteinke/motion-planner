@@ -6,7 +6,7 @@ from scipy.spatial import KDTree
 import algorithms
 
 
-class RrtAlgorithm:
+class RrtAlgorithm:  # TODO add algorithm base class
     def __init__(self, x_range: [], y_range: [], collision_array_yx: []):
         # requirements
         self.__x_range = x_range  # = [x_min, x_max]
@@ -60,6 +60,7 @@ class RrtAlgorithm:
         while not max_time_elapsed(start_time, max_time):
             # check if goal reached
             if goal_reached(self.__collision_array, c_new, c_goal, max_range):
+                # TODO debug to find corrupted configuration
                 goal_vertex_index = len(self.vertex_array)
                 self.__append_vertex_and_edge(new_index=goal_vertex_index, new_vertex=c_goal,
                                               near_index=new_vertex_index, near_vertex=c_new)

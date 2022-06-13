@@ -7,7 +7,7 @@ import dijkstar
 import algorithms
 
 
-class SprmAlgorithm:
+class SprmAlgorithm:  # TODO add algorithm base class
     def __init__(self, x_range: [], y_range: [], collision_array_yx):
         # requirements
         self.__x_range = x_range  # = [x_min, x_max]
